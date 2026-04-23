@@ -7,6 +7,7 @@ import { BottomNav } from './components/BottomNav';
 import { SplashScreen } from './pages/SplashScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { OtpScreen } from './pages/OtpScreen';
+import { SignupScreen } from './pages/SignupScreen';
 import { HomeScreen } from './pages/HomeScreen';
 import { CreateDeliveryScreen } from './pages/CreateDeliveryScreen';
 import { PriceEstimateScreen } from './pages/PriceEstimateScreen';
@@ -40,6 +41,7 @@ const AppContent = () => {
             <Routes>
               <Route path="/" element={<SplashScreen />} />
               <Route path="/login" element={<LoginScreen />} />
+              <Route path="/signup" element={<SignupScreen />} />
               <Route path="/otp" element={<OtpScreen />} />
               <Route path="/home" element={<HomeScreen />} />
               <Route

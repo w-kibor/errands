@@ -11,7 +11,7 @@ import { mockOrders } from '../data/mockData';
 import { serviceDefinitions } from '../data/services';
 interface AppContextType {
   user: User | null;
-  login: (phone: string) => void;
+  login: (phone: string, name?: string) => void;
   logout: () => void;
   orders: Order[];
   addOrder: (order: Order) => void;
@@ -32,10 +32,10 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [draftOrder, setDraftOrder] = useState<DraftOrder | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
-  const login = (phone: string) => {
+  const login = (phone: string, name?: string) => {
     setUser({
       id: 'u1',
-      name: 'Alex Johnson',
+      name: name || 'Alex Johnson',
       phone,
       isRunner: false,
       avatar:

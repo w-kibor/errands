@@ -73,6 +73,18 @@ export const LoginScreen = () => {
         </form>
       </div>
 
+      <div className="text-center mb-6">
+        <p className="text-sm text-gray-600">
+          Don't have an account?{' '}
+          <button
+            onClick={() => navigate('/signup')}
+            className="text-brand-dark font-bold hover:underline"
+          >
+            Create one
+          </button>
+        </p>
+      </div>
+
       <div className="text-center">
         <p className="text-xs text-gray-400">
           By continuing, you agree to our{' '}

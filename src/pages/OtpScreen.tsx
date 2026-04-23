@@ -8,6 +8,8 @@ export const OtpScreen = () => {
   const location = useLocation();
   const { login } = useAppContext();
   const phone = location.state?.phone || '712 345 678';
+  const isSignup = location.state?.isSignup || false;
+  const signupName = location.state?.name || '';
   const [otp, setOtp] = useState(['', '', '', '']);
   const [timer, setTimer] = useState(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -30,7 +32,7 @@ export const OtpScreen = () => {
     if (newOtp.every((digit) => digit !== '')) {
       // Simulate API call
       setTimeout(() => {
-        login(`+254 ${phone}`);
+        login(`+254 ${phone}`, isSignup ? signupName : undefined);
         navigate('/home');
       }, 500);
     }
@@ -65,7 +67,7 @@ export const OtpScreen = () => {
 
       <h1 className="text-3xl font-bold text-dark mb-2">Verify it's you</h1>
       <p className="text-gray-500 mb-8">
-        We sent a code to{' '}
+        {isSignup ? 'Verify your number to create account: ' : 'We sent a code to '}
         <span className="font-semibold text-dark">+254 {phone}</span>
       </p>
 
