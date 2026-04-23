@@ -110,7 +110,7 @@ const allItems: ShopItem[] = [
 },
 {
   id: 'g3',
-  name: 'Palm Oil',
+  name: 'Avocado Oil',
   price: 2200,
   image: '🫗',
   category: 'groceries',
@@ -126,7 +126,7 @@ const allItems: ShopItem[] = [
 },
 {
   id: 'g5',
-  name: 'Garri (White)',
+  name: 'Maize Flour (Unga)',
   price: 1500,
   image: '🌾',
   category: 'groceries',
@@ -143,7 +143,7 @@ const allItems: ShopItem[] = [
 // Food & Drinks
 {
   id: 'f1',
-  name: 'Jollof Rice Plate',
+  name: 'Pilau Rice Plate',
   price: 2500,
   image: '🍛',
   category: 'food',
@@ -151,7 +151,7 @@ const allItems: ShopItem[] = [
 },
 {
   id: 'f2',
-  name: 'Suya (Beef)',
+  name: 'Nyama Choma (Beef)',
   price: 3000,
   image: '🥩',
   category: 'food',
@@ -159,7 +159,7 @@ const allItems: ShopItem[] = [
 },
 {
   id: 'f3',
-  name: 'Chapman Drink',
+  name: 'Passion Juice',
   price: 1500,
   image: '🍹',
   category: 'food',
@@ -175,7 +175,7 @@ const allItems: ShopItem[] = [
 },
 {
   id: 'f5',
-  name: 'Zobo Drink',
+  name: 'Tamarind Juice',
   price: 800,
   image: '🥤',
   category: 'food',
@@ -317,7 +317,7 @@ export const ShopErrandsScreen = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isOrdering, setIsOrdering] = useState(false);
-  const [deliveryAddress, setDeliveryAddress] = useState('Lekki Phase 1, Lagos');
+  const [deliveryAddress, setDeliveryAddress] = useState('Kilimani, Nairobi');
   const cartTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
@@ -375,7 +375,7 @@ export const ShopErrandsScreen = () => {
         id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
         date: new Date().toISOString(),
         pickup: {
-          address: 'SwiftDrop Market Hub, Lagos'
+          address: 'SwiftDrop Market Hub, Nairobi'
         },
         dropoff: {
           address: deliveryAddress
@@ -521,7 +521,7 @@ export const ShopErrandsScreen = () => {
                   <p className="text-[10px] text-gray-500">{item.unit}</p>
                   <div className="flex justify-between items-center mt-2">
                     <span className="font-bold text-dark text-sm">
-                      ₦{item.price.toLocaleString()}
+                      KSh {item.price.toLocaleString()}
                     </span>
                     <button
                 onClick={(e) => {
@@ -564,7 +564,7 @@ export const ShopErrandsScreen = () => {
         <p className="text-[10px] text-gray-500 mb-2">{item.unit}</p>
         <div className="flex justify-between items-center">
           <span className="font-bold text-dark text-sm">
-            ₦{item.price.toLocaleString()}
+            KSh {item.price.toLocaleString()}
           </span>
           {qty > 0 ?
           <div className="flex items-center space-x-2 bg-brand/10 rounded-full px-1 py-0.5">
@@ -700,7 +700,7 @@ export const ShopErrandsScreen = () => {
                   </h4>
                   <p className="text-xs text-gray-500">{item.unit}</p>
                   <p className="font-bold text-dark text-sm mt-1">
-                    ₦{(item.price * item.quantity).toLocaleString()}
+                    KSh {(item.price * item.quantity).toLocaleString()}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -755,19 +755,19 @@ export const ShopErrandsScreen = () => {
                   Subtotal ({cartCount} items)
                 </span>
                 <span className="font-medium text-dark">
-                  ₦{cartTotal.toLocaleString()}
+                  KSh {cartTotal.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Delivery Fee</span>
                 <span className="font-medium text-dark">
-                  ₦{deliveryFee.toLocaleString()}
+                  KSh {deliveryFee.toLocaleString()}
                 </span>
               </div>
               <div className="pt-3 mt-1 border-t border-gray-100 flex justify-between items-center">
                 <span className="font-bold text-dark">Total</span>
                 <span className="text-xl font-bold text-brand-dark">
-                  ₦{(cartTotal + deliveryFee).toLocaleString()}
+                  KSh {(cartTotal + deliveryFee).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -796,7 +796,7 @@ export const ShopErrandsScreen = () => {
           className="w-6 h-6 border-2 border-dark border-t-transparent rounded-full" /> :
 
 
-        `Place Order · ₦${(cartTotal + deliveryFee).toLocaleString()}`
+        `Place Order · KSh ${(cartTotal + deliveryFee).toLocaleString()}`
         }
           </button>
         </div>
@@ -903,7 +903,7 @@ export const ShopErrandsScreen = () => {
                 {cartCount} {cartCount === 1 ? 'item' : 'items'}
               </span>
             </div>
-            <span>₦{cartTotal.toLocaleString()}</span>
+            <span>KSh {cartTotal.toLocaleString()}</span>
           </button>
         </motion.div>
       }

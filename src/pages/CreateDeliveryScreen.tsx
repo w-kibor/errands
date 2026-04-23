@@ -51,13 +51,13 @@ export const CreateDeliveryScreen = () => {
     setDraftOrder({
       pickup: {
         address: pickup,
-        lat: 6.5244,
-        lng: 3.3792
+        lat: -1.286389,
+        lng: 36.817223
       },
       dropoff: {
         address: dropoff,
-        lat: 6.4698,
-        lng: 3.5852
+        lat: -1.3000,
+        lng: 36.7800
       },
       packageType,
       urgency,
@@ -203,7 +203,7 @@ export const CreateDeliveryScreen = () => {
                   </h3>
                   <p className="text-xs text-gray-500">
                     25 - 40 mins{' '}
-                    <span className="text-red-500 font-medium ml-1">+₦800</span>
+                    <span className="text-red-500 font-medium ml-1">+KSh 800</span>
                   </p>
                 </div>
               </div>

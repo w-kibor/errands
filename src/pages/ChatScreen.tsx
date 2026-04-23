@@ -78,7 +78,7 @@ export const ChatScreen = () => {
             </div>
             <div className="ml-3">
               <h2 className="font-bold text-dark text-sm">{mockRider.name}</h2>
-              <p className="text-xs text-gray-500">Honda CG125</p>
+              <p className="text-xs text-gray-500">Bajaj Boxer 150</p>
             </div>
           </div>
         </div>

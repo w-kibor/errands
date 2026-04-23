@@ -19,7 +19,7 @@ export const RunnerSignupScreen = () => {
   const { becomeRunner } = useAppContext();
 
   const [vehicleType, setVehicleType] = useState('');
-  const [coverageArea, setCoverageArea] = useState('Lagos Island / Lekki / Yaba');
+  const [coverageArea, setCoverageArea] = useState('Westlands / Kilimani / Upper Hill');
   const [capabilities, setCapabilities] = useState<ServiceType[]>([]);
 
   const toggleCapability = (service: ServiceType) => {

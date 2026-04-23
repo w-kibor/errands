@@ -78,7 +78,7 @@ export const OrderCard = ({ order, onClick }: OrderCardProps) => {
           }
         </div>
         <div className="flex items-center text-brand-dark font-bold">
-          ₦{order.price.toLocaleString()}
+          KSh {order.price.toLocaleString()}
           <ChevronRight size={16} className="ml-1 text-gray-400" />
         </div>
       </div>

@@ -47,15 +47,15 @@ export const LoginScreen = () => {
                 type="button"
                 className="flex items-center px-4 bg-gray-50 border-r border-gray-100 text-dark font-medium">
                 
-                <span>🇳🇬</span>
-                <span className="mx-2">+234</span>
+                <span>🇰🇪</span>
+                <span className="mx-2">+254</span>
                 <ChevronDown size={16} className="text-gray-400" />
               </button>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                placeholder="800 000 0000"
+                placeholder="712 345 678"
                 className="flex-1 px-4 py-4 outline-none text-dark font-medium text-lg w-full"
                 autoFocus />
               

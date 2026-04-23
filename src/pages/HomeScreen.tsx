@@ -64,7 +64,7 @@ export const HomeScreen = () => {
           <div className="flex items-center text-brand-dark">
             <MapPin size={18} className="mr-2" />
             <span className="font-semibold text-sm">
-              Current Location: Lagos
+              Current Location: Nairobi
             </span>
           </div>
           <ChevronRight size={18} className="text-brand-dark" />

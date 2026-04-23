@@ -34,13 +34,13 @@ export const PriceEstimateScreen = () => {
         rider: {
           id: 'r2',
           name: 'David K.',
-          phone: '+234 800 111 2222',
+          phone: '+254 722 111 222',
           rating: 4.9,
           vehicle: 'Toyota Corolla',
           avatar:
           'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-          lat: 6.52,
-          lng: 3.37
+          lat: -1.2921,
+          lng: 36.8219
         }
       };
       addOrder(newOrder);
@@ -154,27 +154,27 @@ export const PriceEstimateScreen = () => {
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Base Fare</span>
             <span className="font-medium text-dark">
-              ₦{basePrice.toLocaleString()}
+              KSh {basePrice.toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Distance Fee</span>
             <span className="font-medium text-dark">
-              ₦{distanceFee.toLocaleString()}
+              KSh {distanceFee.toLocaleString()}
             </span>
           </div>
           {expressFee > 0 &&
           <div className="flex justify-between text-sm">
               <span className="text-gray-500">Express Surcharge</span>
               <span className="font-medium text-dark">
-                ₦{expressFee.toLocaleString()}
+                KSh {expressFee.toLocaleString()}
               </span>
             </div>
           }
           <div className="pt-3 mt-1 border-t border-gray-100 flex justify-between items-center">
             <span className="font-bold text-dark">Total</span>
             <span className="text-xl font-bold text-brand-dark">
-              ₦{total.toLocaleString()}
+              KSh {total.toLocaleString()}
             </span>
           </div>
         </div>
