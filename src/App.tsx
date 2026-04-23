@@ -19,6 +19,9 @@ import { ProfileScreen } from './pages/ProfileScreen';
 import { EditProfileScreen } from './pages/EditProfileScreen';
 import { AddressesScreen } from './pages/AddressesScreen';
 import { PaymentMethodsScreen } from './pages/PaymentMethodsScreen';
+import { NotificationsScreen } from './pages/NotificationsScreen';
+import { HelpSupportScreen } from './pages/HelpSupportScreen';
+import { AboutScreen } from './pages/AboutScreen';
 import { ShopErrandsScreen } from './pages/ShopErrandsScreen';
 import { ServicesScreen } from './pages/ServicesScreen';
 import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
@@ -60,6 +63,9 @@ const AppContent = () => {
               <Route path="/edit-profile" element={<EditProfileScreen />} />
               <Route path="/addresses" element={<AddressesScreen />} />
               <Route path="/payment-methods" element={<PaymentMethodsScreen />} />
+              <Route path="/notifications" element={<NotificationsScreen />} />
+              <Route path="/help-support" element={<HelpSupportScreen />} />
+              <Route path="/about" element={<AboutScreen />} />
               <Route path="/shop-errands" element={<ShopErrandsScreen />} />
               <Route path="/services" element={<ServicesScreen />} />
               <Route path="/create-request" element={<CreateServiceRequestScreen />} />

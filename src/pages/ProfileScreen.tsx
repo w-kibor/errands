@@ -38,19 +38,22 @@ export const ProfileScreen = () => {
     icon: Bell,
     label: 'Notifications',
     color: 'text-purple-500',
-    bg: 'bg-purple-50'
+    bg: 'bg-purple-50',
+    path: '/notifications'
   },
   {
     icon: HelpCircle,
     label: 'Help & Support',
     color: 'text-orange-500',
-    bg: 'bg-orange-50'
+    bg: 'bg-orange-50',
+    path: '/help-support'
   },
   {
     icon: Info,
     label: 'About SwiftDrop',
     color: 'text-gray-500',
-    bg: 'bg-gray-100'
+    bg: 'bg-gray-100',
+    path: '/about'
   }];
 
   return (
