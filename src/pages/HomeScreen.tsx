@@ -92,7 +92,7 @@ export const HomeScreen = () => {
             whileTap={{
               scale: 0.95
             }}
-            onClick={() => navigate('/shop-errands')}
+            onClick={() => navigate('/services')}
             className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center text-center space-y-3 relative overflow-hidden">
             
             <div className="absolute top-0 right-0 bg-brand text-dark text-[10px] font-bold px-2 py-1 rounded-bl-lg">
@@ -106,8 +106,8 @@ export const HomeScreen = () => {
               
             </div>
             <div>
-              <h3 className="font-bold text-dark">Shop Errands</h3>
-              <p className="text-xs text-gray-500 mt-1">Groceries, food</p>
+              <h3 className="font-bold text-dark">All Services</h3>
+              <p className="text-xs text-gray-500 mt-1">Runners on demand</p>
             </div>
           </motion.button>
         </div>

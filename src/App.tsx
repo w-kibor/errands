@@ -16,6 +16,9 @@ import { ChatScreen } from './pages/ChatScreen';
 import { RatingScreen } from './pages/RatingScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
 import { ShopErrandsScreen } from './pages/ShopErrandsScreen';
+import { ServicesScreen } from './pages/ServicesScreen';
+import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
+import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
 const AppContent = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-200">
@@ -50,6 +53,9 @@ const AppContent = () => {
               <Route path="/rating" element={<RatingScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
               <Route path="/shop-errands" element={<ShopErrandsScreen />} />
+              <Route path="/services" element={<ServicesScreen />} />
+              <Route path="/create-request" element={<CreateServiceRequestScreen />} />
+              <Route path="/runner-signup" element={<RunnerSignupScreen />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>

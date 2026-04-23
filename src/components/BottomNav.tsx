@@ -45,7 +45,10 @@ export const BottomNav = () => {
   '/estimate',
   '/tracking',
   '/rating',
-  '/shop-errands'];
+  '/shop-errands',
+  '/services',
+  '/create-request',
+  '/runner-signup'];
 
   if (hiddenPaths.includes(location.pathname)) return null;
   return (
