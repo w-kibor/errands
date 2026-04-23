@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PaymentMethodType {
+  MPESA
+  CARD
+  CASH_ON_DELIVERY
+}
+
+enum PackageType {
+  DOCUMENT
+  SMALL_BOX
+  MEDIUM_BOX
+  LARGE_BOX
+  FRAGILE
+}
+
+enum UrgencyType {
+  NORMAL
+  EXPRESS
+}
+
+enum OrderStatus {
+  PENDING
+  RIDER_ASSIGNED
+  PICKING_UP
+  EN_ROUTE
+  DELIVERED
+  CANCELLED
+}
+
+enum ServiceType {
+  CBD_BATCH_DELIVERY
+  PERSONAL_SHOPPING
+  PARCEL_PICKUP_AND_DROP_OFF
+  SHOP_LEGITIMACY_VERIFICATION
+  CUSTOM_TASK_REQUESTS
+  DEDICATED_BUSINESS_ERRANDS_SUPPORT
+}
+
+enum ServiceRequestStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id                   String               @id @default(cuid())
+  name                 String
+  phone                String               @unique
+  avatar               String?
+  isRunner             Boolean              @default(false)
+  runnerVehicleType    String?
+  runnerCoverageArea   String?
+  runnerCapabilities   String[]
+  runnerVerified       Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  addresses            SavedAddress[]
+  paymentMethods       SavedPaymentMethod[]
+  orders               Order[]
+  riderOrders          Order[]              @relation("OrderRider")
+  serviceRequests      ServiceRequest[]
+  assignedServiceRequests ServiceRequest[]   @relation("AssignedRunner")
+}
+
+model SavedAddress {
+  id         String   @id @default(cuid())
+  label      String
+  address    String
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SavedPaymentMethod {
+  id         String             @id @default(cuid())
+  type       PaymentMethodType
+  label      String
+  details    String
+  isDefault  Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  orderNumber String      @unique
+  date        DateTime    @default(now())
+  pickup      Json
+  dropoff     Json
+  packageType PackageType
+  urgency     UrgencyType
+  status      OrderStatus @default(PENDING)
+  price       Int
+  note        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  riderId     String?
+  rider       User?       @relation("OrderRider", fields: [riderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([riderId])
+}
+
+model ServiceRequest {
+  id              String             @id @default(cuid())
+  serviceId       String
+  serviceName     ServiceType
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  pickup          Json?
+  dropoff         Json?
+  businessName    String?
+  instructions    String
+  urgency         UrgencyType
+  status          ServiceRequestStatus @default(PENDING)
+  customerId      String
+  customer        User               @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignedRunnerId String?
+  assignedRunner  User?              @relation("AssignedRunner", fields: [assignedRunnerId], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([assignedRunnerId])
+}

@@ -30,25 +30,29 @@ export const AddressesScreen = () => {
     setIsAdding(false);
   };
 
-  const handleAddAddress = () => {
+  const handleAddAddress = async () => {
     if (!canSave) return;
 
-    if (editingId) {
-      updateAddress({
-        id: editingId,
-        label: label.trim(),
-        address: address.trim(),
-        isPrimary: setAsMain
-      });
-    } else {
-      addAddress({
-        label: label.trim(),
-        address: address.trim(),
-        isPrimary: setAsMain
-      });
-    }
+    try {
+      if (editingId) {
+        await updateAddress({
+          id: editingId,
+          label: label.trim(),
+          address: address.trim(),
+          isPrimary: setAsMain
+        });
+      } else {
+        await addAddress({
+          label: label.trim(),
+          address: address.trim(),
+          isPrimary: setAsMain
+        });
+      }
 
-    resetForm();
+      resetForm();
+    } catch {
+      window.alert('Could not save address. Please try again.');
+    }
   };
 
   const handleStartAdd = () => {
@@ -69,7 +73,7 @@ export const AddressesScreen = () => {
     setIsAdding(true);
   };
 
-  const handleDeleteAddress = (addressId: string) => {
+  const handleDeleteAddress = async (addressId: string) => {
     if (addresses.length === 1) {
       window.alert('You need at least one saved address.');
       return;
@@ -78,16 +82,24 @@ export const AddressesScreen = () => {
     const shouldDelete = window.confirm('Delete this address?');
     if (!shouldDelete) return;
 
-    deleteAddress(addressId);
-    if (editingId === addressId) {
-      resetForm();
+    try {
+      await deleteAddress(addressId);
+      if (editingId === addressId) {
+        resetForm();
+      }
+    } catch {
+      window.alert('Could not delete address. Please try again.');
     }
   };
 
-  const handleSetMain = (addressId: string) => {
+  const handleSetMain = async (addressId: string) => {
     const shouldSet = window.confirm('Set this as your main address?');
     if (!shouldSet) return;
-    setPrimaryAddress(addressId);
+    try {
+      await setPrimaryAddress(addressId);
+    } catch {
+      window.alert('Could not update main address. Please try again.');
+    }
   };
 
   return (

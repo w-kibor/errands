@@ -1,10 +1,11 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useEffect, useState, createContext, useContext } from 'react';
 import {
   User,
   Order,
   DraftOrder,
   ServiceRequest,
   ServiceDefinition,
+  ServiceType,
   RunnerProfile,
   SavedAddress,
   SavedPaymentMethod,
@@ -12,11 +13,17 @@ import {
 } from '../types';
 import { mockOrders } from '../data/mockData';
 import { serviceDefinitions } from '../data/services';
+import {
+  apiRequest,
+  BackendUser,
+  mapPaymentMethodType,
+  toBackendPaymentMethodType
+} from '../lib/api';
 interface AppContextType {
   user: User | null;
-  login: (phone: string, name?: string) => void;
-  updateUserProfile: (data: { name: string; phone: string; avatar?: string; }) => void;
-  logout: () => void;
+  login: (phone: string, name?: string) => Promise<void>;
+  updateUserProfile: (data: { name: string; phone: string; avatar?: string; }) => Promise<void>;
+  logout: () => Promise<void>;
   orders: Order[];
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
@@ -39,58 +46,96 @@ interface AppContextType {
   deletePaymentMethod: (methodId: string) => void;
 }
 const AppContext = createContext<AppContextType | undefined>(undefined);
+const USER_STORAGE_KEY = 'swiftdrop_user_id';
+
+const mapBackendUser = (backendUser: BackendUser): User => ({
+  id: backendUser.id,
+  name: backendUser.name,
+  phone: backendUser.phone,
+  avatar: backendUser.avatar || undefined,
+  isRunner: backendUser.isRunner,
+  runnerProfile: backendUser.isRunner
+    ? {
+        vehicleType: backendUser.runnerVehicleType || '',
+        coverageArea: backendUser.runnerCoverageArea || '',
+        capabilities: backendUser.runnerCapabilities as ServiceType[],
+        verified: backendUser.runnerVerified
+      }
+    : undefined
+});
+
+const mapBackendAddress = (address: { id: string; label: string; address: string; isPrimary: boolean; }): SavedAddress => ({
+  id: address.id,
+  label: address.label,
+  address: address.address,
+  isPrimary: address.isPrimary
+});
+
+const mapBackendPaymentMethod = (method: { id: string; type: 'MPESA' | 'CARD' | 'CASH_ON_DELIVERY'; label: string; details: string; isDefault: boolean; }): SavedPaymentMethod => ({
+  id: method.id,
+  type: mapPaymentMethodType(method.type),
+  label: method.label,
+  details: method.details,
+  isDefault: method.isDefault
+});
+
 export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [draftOrder, setDraftOrder] = useState<DraftOrder | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
-  const [addresses, setAddresses] = useState<SavedAddress[]>([
-    {
-      id: 'addr-1',
-      label: 'Home',
-      address: 'Kilimani, Nairobi',
-      isPrimary: true
-    }
-  ]);
-  const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([
-    {
-      id: 'pm-1',
-      type: 'M-Pesa',
-      label: 'Personal M-Pesa',
-      details: '*** *** 678',
-      isDefault: true
-    }
-  ]);
-  const login = (phone: string, name?: string) => {
-    setUser({
-      id: 'u1',
-      name: name || 'Alex Johnson',
-      phone,
-      isRunner: false,
-      avatar:
-      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
-    });
+  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([]);
+
+  const hydrateUser = async (userId: string) => {
+    const response = await apiRequest<{ user: BackendUser }>(`/api/users/${userId}`);
+    setUser(mapBackendUser(response.user));
+    setAddresses((response.user.addresses || []).map(mapBackendAddress));
+    setPaymentMethods((response.user.paymentMethods || []).map(mapBackendPaymentMethod));
   };
-  const updateUserProfile = (data: {
+
+  useEffect(() => {
+    const storedUserId = localStorage.getItem(USER_STORAGE_KEY);
+    if (!storedUserId) return;
+
+    hydrateUser(storedUserId).catch(() => {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    });
+  }, []);
+
+  const login = async (phone: string, name?: string) => {
+    const endpoint = name ? '/api/auth/register' : '/api/auth/login';
+    const payload = name ? { phone, name } : { phone };
+    const response = await apiRequest<{ user: BackendUser }>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    localStorage.setItem(USER_STORAGE_KEY, response.user.id);
+    await hydrateUser(response.user.id);
+  };
+  const updateUserProfile = async (data: {
     name: string;
     phone: string;
     avatar?: string;
   }) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        name: data.name,
-        phone: data.phone,
-        avatar: data.avatar || prev.avatar
-      };
+    if (!user) return;
+
+    const response = await apiRequest<{ user: BackendUser }>(`/api/users/${user.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
     });
+
+    setUser(mapBackendUser(response.user));
   };
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     setDraftOrder(null);
     setActiveTab('home');
+    setAddresses([]);
+    setPaymentMethods([]);
+    localStorage.removeItem(USER_STORAGE_KEY);
   };
   const addOrder = (order: Order) => {
     setOrders([order, ...orders]);
@@ -110,92 +155,100 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const addServiceRequest = (request: ServiceRequest) => {
     setServiceRequests((prev) => [request, ...prev]);
   };
-  const addAddress = (data: { label: string; address: string; isPrimary?: boolean; }) => {
+  const addAddress = async (data: { label: string; address: string; isPrimary?: boolean; }) => {
+    if (!user) return;
+
+    const response = await apiRequest<{ address: { id: string; label: string; address: string; isPrimary: boolean; } }>(
+      `/api/users/${user.id}/addresses`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data)
+      }
+    );
+
     setAddresses((prev) => {
-      const makePrimary = Boolean(data.isPrimary) || prev.length === 0;
-      const nextExisting = makePrimary ? prev.map((item) => ({ ...item, isPrimary: false })) : prev;
-      const newAddress: SavedAddress = {
-        id: `addr-${Date.now()}`,
-        label: data.label,
-        address: data.address,
-        isPrimary: makePrimary
-      };
-      return [newAddress, ...nextExisting];
+      const next = response.address.isPrimary
+        ? prev.map((item) => ({ ...item, isPrimary: false }))
+        : prev;
+      return [mapBackendAddress(response.address), ...next.filter((item) => item.id !== response.address.id)];
     });
+    await hydrateUser(user.id);
   };
-  const updateAddress = (data: {
+  const updateAddress = async (data: {
     id: string;
     label: string;
     address: string;
     isPrimary?: boolean;
   }) => {
-    setAddresses((prev) => {
-      const next = prev.map((item) => {
-        if (item.id !== data.id) {
-          return data.isPrimary ? { ...item, isPrimary: false } : item;
-        }
-        return {
-          ...item,
-          label: data.label,
-          address: data.address,
-          isPrimary: Boolean(data.isPrimary)
-        };
-      });
+    if (!user) return;
 
-      if (next.length > 0 && !next.some((item) => item.isPrimary)) {
-        return next.map((item, index) => ({ ...item, isPrimary: index === 0 }));
-      }
-      return next;
+    await apiRequest(`/api/users/${user.id}/addresses/${data.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
     });
+    await hydrateUser(user.id);
   };
-  const deleteAddress = (addressId: string) => {
-    setAddresses((prev) => {
-      const removed = prev.find((item) => item.id === addressId);
-      const next = prev.filter((item) => item.id !== addressId);
+  const deleteAddress = async (addressId: string) => {
+    if (!user) return;
 
-      if (next.length === 0) return next;
-      if (removed?.isPrimary) {
-        return next.map((item, index) => ({ ...item, isPrimary: index === 0 }));
-      }
-      return next;
+    await apiRequest(`/api/users/${user.id}/addresses/${addressId}`, {
+      method: 'DELETE'
     });
+    await hydrateUser(user.id);
   };
-  const setPrimaryAddress = (addressId: string) => {
-    setAddresses((prev) => prev.map((item) => ({ ...item, isPrimary: item.id === addressId })));
+  const setPrimaryAddress = async (addressId: string) => {
+    if (!user) return;
+
+    await apiRequest(`/api/users/${user.id}/addresses/${addressId}/primary`, {
+      method: 'PATCH'
+    });
+    await hydrateUser(user.id);
   };
-  const addPaymentMethod = (data: {
+  const addPaymentMethod = async (data: {
     type: PaymentMethodType;
     label: string;
     details: string;
     isDefault?: boolean;
   }) => {
-    setPaymentMethods((prev) => {
-      const makeDefault = Boolean(data.isDefault) || prev.length === 0;
-      const nextExisting = makeDefault ? prev.map((item) => ({ ...item, isDefault: false })) : prev;
-      const newMethod: SavedPaymentMethod = {
-        id: `pm-${Date.now()}`,
-        type: data.type,
-        label: data.label,
-        details: data.details,
-        isDefault: makeDefault
-      };
-      return [newMethod, ...nextExisting];
-    });
-  };
-  const setDefaultPaymentMethod = (methodId: string) => {
-    setPaymentMethods((prev) => prev.map((item) => ({ ...item, isDefault: item.id === methodId })));
-  };
-  const deletePaymentMethod = (methodId: string) => {
-    setPaymentMethods((prev) => {
-      const removed = prev.find((item) => item.id === methodId);
-      const next = prev.filter((item) => item.id !== methodId);
+    if (!user) return;
 
-      if (next.length === 0) return next;
-      if (removed?.isDefault) {
-        return next.map((item, index) => ({ ...item, isDefault: index === 0 }));
+    const response = await apiRequest<{ paymentMethod: { id: string; type: 'MPESA' | 'CARD' | 'CASH_ON_DELIVERY'; label: string; details: string; isDefault: boolean; } }>(
+      `/api/users/${user.id}/payment-methods`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          type: toBackendPaymentMethodType(data.type),
+          label: data.label,
+          details: data.details,
+          isDefault: data.isDefault
+        })
       }
-      return next;
+    );
+
+    setPaymentMethods((prev) => {
+      const mapped = mapBackendPaymentMethod(response.paymentMethod);
+      if (mapped.isDefault) {
+        return [mapped, ...prev.map((item) => ({ ...item, isDefault: false }))];
+      }
+      return [mapped, ...prev.filter((item) => item.id !== mapped.id)];
     });
+    await hydrateUser(user.id);
+  };
+  const setDefaultPaymentMethod = async (methodId: string) => {
+    if (!user) return;
+
+    await apiRequest(`/api/users/${user.id}/payment-methods/${methodId}/default`, {
+      method: 'PATCH'
+    });
+    await hydrateUser(user.id);
+  };
+  const deletePaymentMethod = async (methodId: string) => {
+    if (!user) return;
+
+    await apiRequest(`/api/users/${user.id}/payment-methods/${methodId}`, {
+      method: 'DELETE'
+    });
+    await hydrateUser(user.id);
   };
   const becomeRunner = (profile: RunnerProfile) => {
     setUser((prev) => {

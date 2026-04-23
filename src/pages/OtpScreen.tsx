@@ -32,8 +32,14 @@ export const OtpScreen = () => {
     if (newOtp.every((digit) => digit !== '')) {
       // Simulate API call
       setTimeout(() => {
-        login(`+254 ${phone}`, isSignup ? signupName : undefined);
-        navigate('/home');
+        void (async () => {
+          try {
+            await login(`+254 ${phone}`, isSignup ? signupName : undefined);
+            navigate('/home');
+          } catch {
+            window.alert('Could not verify your account right now. Please try again.');
+          }
+        })();
       }, 500);
     }
   };

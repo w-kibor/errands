@@ -22,37 +22,49 @@ export const PaymentMethodsScreen = () => {
 
   const canSave = label.trim().length >= 2 && details.trim().length >= 3;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!canSave) return;
 
-    addPaymentMethod({
-      type,
-      label: label.trim(),
-      details: details.trim(),
-      isDefault: setAsDefault
-    });
+    try {
+      await addPaymentMethod({
+        type,
+        label: label.trim(),
+        details: details.trim(),
+        isDefault: setAsDefault
+      });
 
-    setLabel('');
-    setDetails('');
-    setSetAsDefault(false);
-    setType('M-Pesa');
-    setIsAdding(false);
+      setLabel('');
+      setDetails('');
+      setSetAsDefault(false);
+      setType('M-Pesa');
+      setIsAdding(false);
+    } catch {
+      window.alert('Could not save payment method. Please try again.');
+    }
   };
 
-  const handleSetDefault = (id: string) => {
+  const handleSetDefault = async (id: string) => {
     const shouldSet = window.confirm('Set this as your default payment method?');
     if (!shouldSet) return;
-    setDefaultPaymentMethod(id);
+    try {
+      await setDefaultPaymentMethod(id);
+    } catch {
+      window.alert('Could not update default payment method. Please try again.');
+    }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (paymentMethods.length === 1) {
       window.alert('You need at least one payment method.');
       return;
     }
     const shouldDelete = window.confirm('Delete this payment method?');
     if (!shouldDelete) return;
-    deletePaymentMethod(id);
+    try {
+      await deletePaymentMethod(id);
+    } catch {
+      window.alert('Could not delete payment method. Please try again.');
+    }
   };
 
   return (

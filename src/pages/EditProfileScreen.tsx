@@ -114,16 +114,20 @@ export const EditProfileScreen = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return;
 
-    updateUserProfile({
-      name: cleanedName,
-      phone: `+254 ${cleanedPhone}`,
-      avatar: cleanedAvatar || undefined
-    });
+    try {
+      await updateUserProfile({
+        name: cleanedName,
+        phone: `+254 ${cleanedPhone}`,
+        avatar: cleanedAvatar || undefined
+      });
 
-    navigate('/profile');
+      navigate('/profile');
+    } catch {
+      window.alert('Could not save profile changes. Please try again.');
+    }
   };
 
   return (
