@@ -16,6 +16,7 @@ import { OrderHistoryScreen } from './pages/OrderHistoryScreen';
 import { ChatScreen } from './pages/ChatScreen';
 import { RatingScreen } from './pages/RatingScreen';
 import { ProfileScreen } from './pages/ProfileScreen';
+import { EditProfileScreen } from './pages/EditProfileScreen';
 import { ShopErrandsScreen } from './pages/ShopErrandsScreen';
 import { ServicesScreen } from './pages/ServicesScreen';
 import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
@@ -54,6 +55,7 @@ const AppContent = () => {
               <Route path="/chat" element={<ChatScreen />} />
               <Route path="/rating" element={<RatingScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
+              <Route path="/edit-profile" element={<EditProfileScreen />} />
               <Route path="/shop-errands" element={<ShopErrandsScreen />} />
               <Route path="/services" element={<ServicesScreen />} />
               <Route path="/create-request" element={<CreateServiceRequestScreen />} />

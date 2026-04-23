@@ -70,7 +70,10 @@ export const ProfileScreen = () => {
               alt="Profile"
               className="w-24 h-24 rounded-full object-cover border-4 border-brand/20" />
             
-            <button className="absolute bottom-0 right-0 bg-brand text-dark p-2 rounded-full shadow-md border-2 border-white">
+            <button
+              onClick={() => navigate('/edit-profile')}
+              className="absolute bottom-0 right-0 bg-brand text-dark p-2 rounded-full shadow-md border-2 border-white"
+            >
               <Edit2 size={14} />
             </button>
           </div>

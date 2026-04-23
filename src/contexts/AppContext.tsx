@@ -12,6 +12,7 @@ import { serviceDefinitions } from '../data/services';
 interface AppContextType {
   user: User | null;
   login: (phone: string, name?: string) => void;
+  updateUserProfile: (data: { name: string; phone: string; avatar?: string; }) => void;
   logout: () => void;
   orders: Order[];
   addOrder: (order: Order) => void;
@@ -40,6 +41,21 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
       isRunner: false,
       avatar:
       'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
+    });
+  };
+  const updateUserProfile = (data: {
+    name: string;
+    phone: string;
+    avatar?: string;
+  }) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        name: data.name,
+        phone: data.phone,
+        avatar: data.avatar || prev.avatar
+      };
     });
   };
   const logout = () => {
@@ -80,6 +96,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
       value={{
         user,
         login,
+        updateUserProfile,
         logout,
         orders,
         addOrder,
