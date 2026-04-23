@@ -370,6 +370,7 @@ export const ShopErrandsScreen = () => {
   const handleConfirmOrder = () => {
     setIsOrdering(true);
     setTimeout(() => {
+      void (async () => {
       const itemNames = cart.map((c) => c.name).join(', ');
       const newOrder = {
         id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -393,13 +394,14 @@ export const ShopErrandsScreen = () => {
           'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'
         }
       };
-      addOrder(newOrder);
+      await addOrder(newOrder);
       setCart([]);
       navigate('/tracking', {
         state: {
           orderId: newOrder.id
         }
       });
+      })();
     }, 2000);
   };
   const filteredItems = selectedCategory ?

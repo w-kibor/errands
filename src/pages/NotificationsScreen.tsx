@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Bell, Package, Tag, MessageCircle } from 'lucide-react';
+import { useAppContext } from '../contexts/AppContext';
+import { apiRequest, BackendNotificationPreference, notificationPreferenceSeeds } from '../lib/api';
 
 type NotificationSetting = {
   id: string;
@@ -13,41 +15,79 @@ type NotificationSetting = {
 
 export const NotificationsScreen = () => {
   const navigate = useNavigate();
-  const [settings, setSettings] = useState<NotificationSetting[]>([
-    {
-      id: 'order-updates',
-      title: 'Order Updates',
-      description: 'Status changes, rider assignment, and delivery progress.',
-      icon: Package,
-      enabled: true
-    },
-    {
-      id: 'promotions',
-      title: 'Promotions',
-      description: 'Discounts, campaigns, and limited-time offers.',
-      icon: Tag,
-      enabled: true
-    },
-    {
-      id: 'messages',
-      title: 'Messages',
-      description: 'Chat and support message alerts.',
-      icon: MessageCircle,
-      enabled: true
-    }
-  ]);
+  const { user } = useAppContext();
+  const [settings, setSettings] = useState<NotificationSetting[]>(
+    notificationPreferenceSeeds.map((item) => ({
+      id: item.key,
+      title: item.title,
+      description: item.description,
+      icon: item.key === 'order-updates' ? Package : item.key === 'promotions' ? Tag : MessageCircle,
+      enabled: item.enabled
+    }))
+  );
 
-  const toggleSetting = (id: string) => {
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    void (async () => {
+      try {
+        const response = await apiRequest<{ notificationPreferences: BackendNotificationPreference[] }>(
+          `/api/users/${user.id}/notifications`
+        );
+
+        const nextSettings = notificationPreferenceSeeds.map((seed) => {
+          const storedPreference = response.notificationPreferences.find((item) => item.key === seed.key);
+          return {
+            id: seed.key,
+            title: seed.title,
+            description: seed.description,
+            icon: seed.key === 'order-updates' ? Package : seed.key === 'promotions' ? Tag : MessageCircle,
+            enabled: storedPreference?.enabled ?? seed.enabled
+          };
+        });
+
+        setSettings(nextSettings);
+      } catch {
+        setSettings((prev) => prev);
+      }
+    })();
+  }, [navigate, user]);
+
+  const toggleSetting = async (id: string) => {
+    if (!user) return;
+
+    const nextValue = !settings.find((item) => item.id === id)?.enabled;
     setSettings((prev) =>
       prev.map((item) =>
         item.id === id
           ? {
               ...item,
-              enabled: !item.enabled
+              enabled: nextValue
             }
           : item
       )
     );
+
+    try {
+      await apiRequest(`/api/users/${user.id}/notifications/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ enabled: nextValue })
+      });
+    } catch {
+      setSettings((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                enabled: !nextValue
+              }
+            : item
+        )
+      );
+    }
   };
 
   return (

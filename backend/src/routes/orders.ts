@@ -24,7 +24,17 @@ ordersRouter.get('/', async (req, res) => {
   const { userId } = req.params as { userId: string };
   const orders = await prisma.order.findMany({
     where: { userId },
-    orderBy: { date: 'desc' }
+    orderBy: { date: 'desc' },
+    include: {
+      rider: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+            avatar: true
+        }
+      }
+    }
   });
   return res.json({ orders });
 });
@@ -47,6 +57,16 @@ ordersRouter.post('/', async (req, res) => {
       price: parsed.data.price,
       note: parsed.data.note,
       riderId: parsed.data.riderId
+    },
+    include: {
+      rider: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+            avatar: true
+        }
+      }
     }
   });
 
@@ -64,7 +84,7 @@ ordersRouter.patch('/:orderId/status', async (req, res) => {
   }
 
   const order = await prisma.order.update({
-    where: { id: orderId },
+    where: { orderNumber: orderId },
     data: { status: parsed.data.status }
   });
 

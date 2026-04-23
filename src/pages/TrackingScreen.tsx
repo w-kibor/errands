@@ -40,17 +40,19 @@ export const TrackingScreen = () => {
     const currentIndex = statuses.indexOf(order.status);
     if (currentIndex < statuses.length - 1) {
       const timer = setTimeout(() => {
-        updateOrderStatus(order.id, statuses[currentIndex + 1]);
-        // If it just hit delivered, go to rating screen after a delay
-        if (statuses[currentIndex + 1] === 'Delivered') {
-          setTimeout(() => {
-            navigate('/rating', {
-              state: {
-                orderId: order.id
-              }
-            });
-          }, 2000);
-        }
+        void (async () => {
+          await updateOrderStatus(order.id, statuses[currentIndex + 1]);
+          // If it just hit delivered, go to rating screen after a delay
+          if (statuses[currentIndex + 1] === 'Delivered') {
+            setTimeout(() => {
+              navigate('/rating', {
+                state: {
+                  orderId: order.id
+                }
+              });
+            }, 2000);
+          }
+        })();
       }, 5000); // Change status every 5 seconds for demo
       return () => clearTimeout(timer);
     }

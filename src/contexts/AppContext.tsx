@@ -11,13 +11,25 @@ import {
   SavedPaymentMethod,
   PaymentMethodType
 } from '../types';
-import { mockOrders } from '../data/mockData';
+import { mockRider } from '../data/mockData';
 import { serviceDefinitions } from '../data/services';
 import {
   apiRequest,
   BackendUser,
+  BackendOrder,
+  BackendServiceRequest,
   mapPaymentMethodType,
+  mapBackendOrderStatus,
+  mapBackendPackageType,
+  mapBackendServiceName,
+  mapBackendServiceRequestStatus,
+  mapBackendUrgency,
   toBackendPaymentMethodType
+  ,
+  toBackendOrderStatus,
+  toBackendPackageType,
+  toBackendServiceName,
+  toBackendUrgency
 } from '../lib/api';
 interface AppContextType {
   user: User | null;
@@ -25,8 +37,8 @@ interface AppContextType {
   updateUserProfile: (data: { name: string; phone: string; avatar?: string; }) => Promise<void>;
   logout: () => Promise<void>;
   orders: Order[];
-  addOrder: (order: Order) => void;
-  updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  addOrder: (order: Order) => Promise<void>;
+  updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   draftOrder: DraftOrder | null;
   setDraftOrder: (draft: DraftOrder | null) => void;
   activeTab: string;
@@ -35,7 +47,7 @@ interface AppContextType {
   serviceRequests: ServiceRequest[];
   addresses: SavedAddress[];
   paymentMethods: SavedPaymentMethod[];
-  addServiceRequest: (request: ServiceRequest) => void;
+  addServiceRequest: (request: ServiceRequest) => Promise<void>;
   becomeRunner: (profile: RunnerProfile) => void;
   addAddress: (data: { label: string; address: string; isPrimary?: boolean; }) => void;
   updateAddress: (data: { id: string; label: string; address: string; isPrimary?: boolean; }) => void;
@@ -79,9 +91,43 @@ const mapBackendPaymentMethod = (method: { id: string; type: 'MPESA' | 'CARD' | 
   isDefault: method.isDefault
 });
 
+const mapBackendOrder = (order: BackendOrder): Order => ({
+  id: order.orderNumber,
+  date: order.date,
+  pickup: order.pickup,
+  dropoff: order.dropoff,
+  packageType: mapBackendPackageType(order.packageType),
+  urgency: mapBackendUrgency(order.urgency),
+  status: mapBackendOrderStatus(order.status),
+  price: order.price,
+  note: order.note || undefined,
+  rider: {
+    ...mockRider,
+    ...(order.rider || {}),
+    id: order.rider?.id || 'demo-rider',
+    name: order.rider?.name || mockRider.name,
+    phone: order.rider?.phone || mockRider.phone,
+    avatar: order.rider?.avatar || mockRider.avatar
+  }
+});
+
+const mapBackendServiceRequest = (request: BackendServiceRequest): ServiceRequest => ({
+  id: request.id,
+  serviceId: request.serviceId,
+  serviceName: mapBackendServiceName(request.serviceName),
+  customerId: request.customerId,
+  createdAt: request.createdAt,
+  pickup: request.pickup || undefined,
+  dropoff: request.dropoff || undefined,
+  businessName: request.businessName || undefined,
+  instructions: request.instructions,
+  urgency: mapBackendUrgency(request.urgency),
+  status: mapBackendServiceRequestStatus(request.status)
+});
+
 export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [user, setUser] = useState<User | null>(null);
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [draftOrder, setDraftOrder] = useState<DraftOrder | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
@@ -89,10 +135,17 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([]);
 
   const hydrateUser = async (userId: string) => {
-    const response = await apiRequest<{ user: BackendUser }>(`/api/users/${userId}`);
-    setUser(mapBackendUser(response.user));
-    setAddresses((response.user.addresses || []).map(mapBackendAddress));
-    setPaymentMethods((response.user.paymentMethods || []).map(mapBackendPaymentMethod));
+    const [userResponse, ordersResponse, serviceRequestsResponse] = await Promise.all([
+      apiRequest<{ user: BackendUser }>(`/api/users/${userId}`),
+      apiRequest<{ orders: BackendOrder[] }>(`/api/users/${userId}/orders`),
+      apiRequest<{ serviceRequests: BackendServiceRequest[] }>(`/api/users/${userId}/service-requests`)
+    ]);
+
+    setUser(mapBackendUser(userResponse.user));
+    setAddresses((userResponse.user.addresses || []).map(mapBackendAddress));
+    setPaymentMethods((userResponse.user.paymentMethods || []).map(mapBackendPaymentMethod));
+    setOrders(ordersResponse.orders.map(mapBackendOrder));
+    setServiceRequests(serviceRequestsResponse.serviceRequests.map(mapBackendServiceRequest));
   };
 
   useEffect(() => {
@@ -137,23 +190,61 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     setPaymentMethods([]);
     localStorage.removeItem(USER_STORAGE_KEY);
   };
-  const addOrder = (order: Order) => {
-    setOrders([order, ...orders]);
+  const addOrder = async (order: Order) => {
+    if (!user) {
+      setOrders((prev) => [order, ...prev]);
+      return;
+    }
+
+    const response = await apiRequest<{ order: BackendOrder }>(`/api/users/${user.id}/orders`, {
+      method: 'POST',
+      body: JSON.stringify({
+        pickup: order.pickup,
+        dropoff: order.dropoff,
+        packageType: toBackendPackageType(order.packageType),
+        urgency: toBackendUrgency(order.urgency),
+        price: order.price,
+        note: order.note,
+        riderId: order.rider?.id && order.rider.id !== 'demo-rider' ? order.rider.id : undefined
+      })
+    });
+
+    setOrders((prev) => [mapBackendOrder(response.order), ...prev.filter((item) => item.id !== response.order.orderNumber)]);
   };
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders(
-      orders.map((o) =>
-      o.id === orderId ?
-      {
-        ...o,
-        status
-      } :
-      o
-      )
-    );
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+    if (!user) {
+      setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status } : o));
+      return;
+    }
+
+    const response = await apiRequest<{ order: BackendOrder }>(`/api/users/${user.id}/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: toBackendOrderStatus(status) })
+    });
+
+    const mappedOrder = mapBackendOrder(response.order);
+    setOrders((prev) => prev.map((item) => item.id === mappedOrder.id ? mappedOrder : item));
   };
-  const addServiceRequest = (request: ServiceRequest) => {
-    setServiceRequests((prev) => [request, ...prev]);
+  const addServiceRequest = async (request: ServiceRequest) => {
+    if (!user) {
+      setServiceRequests((prev) => [request, ...prev]);
+      return;
+    }
+
+    const response = await apiRequest<{ serviceRequest: BackendServiceRequest }>(`/api/users/${user.id}/service-requests`, {
+      method: 'POST',
+      body: JSON.stringify({
+        serviceId: request.serviceId,
+        serviceName: toBackendServiceName(request.serviceName),
+        pickup: request.pickup,
+        dropoff: request.dropoff,
+        businessName: request.businessName,
+        instructions: request.instructions,
+        urgency: toBackendUrgency(request.urgency)
+      })
+    });
+
+    setServiceRequests((prev) => [mapBackendServiceRequest(response.serviceRequest), ...prev.filter((item) => item.id !== response.serviceRequest.id)]);
   };
   const addAddress = async (data: { label: string; address: string; isPrimary?: boolean; }) => {
     if (!user) return;

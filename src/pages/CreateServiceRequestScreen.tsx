@@ -42,21 +42,23 @@ export const CreateServiceRequestScreen = () => {
   const handleSubmit = () => {
     if (!user || !isValid) return;
 
-    addServiceRequest({
-      id: `SRV-${Math.floor(1000 + Math.random() * 9000)}`,
-      serviceId: service.id,
-      serviceName: service.name,
-      customerId: user.id,
-      createdAt: new Date().toISOString(),
-      pickup: service.requiresPickup ? { address: pickup } : undefined,
-      dropoff: service.requiresDropoff ? { address: dropoff } : undefined,
-      businessName: isShopVerification ? businessName : undefined,
-      instructions: instructions.trim(),
-      urgency,
-      status: 'Pending'
-    });
+    void (async () => {
+      await addServiceRequest({
+        id: `SRV-${Math.floor(1000 + Math.random() * 9000)}`,
+        serviceId: service.id,
+        serviceName: service.name,
+        customerId: user.id,
+        createdAt: new Date().toISOString(),
+        pickup: service.requiresPickup ? { address: pickup } : undefined,
+        dropoff: service.requiresDropoff ? { address: dropoff } : undefined,
+        businessName: isShopVerification ? businessName : undefined,
+        instructions: instructions.trim(),
+        urgency,
+        status: 'Pending'
+      });
 
-    navigate('/home');
+      navigate('/home');
+    })();
   };
 
   return (

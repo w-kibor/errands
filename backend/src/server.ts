@@ -6,6 +6,8 @@ import { addressesRouter } from './routes/addresses.js';
 import { paymentMethodsRouter } from './routes/payment-methods.js';
 import { ordersRouter } from './routes/orders.js';
 import { serviceRequestsRouter } from './routes/service-requests.js';
+import { messagesRouter } from './routes/messages.js';
+import { notificationPreferencesRouter } from './routes/notification-preferences.js';
 import { servicesRouter } from './routes/services.js';
 
 const app = express();
@@ -24,6 +26,8 @@ app.use('/api/users/:userId/addresses', addressesRouter);
 app.use('/api/users/:userId/payment-methods', paymentMethodsRouter);
 app.use('/api/users/:userId/orders', ordersRouter);
 app.use('/api/users/:userId/service-requests', serviceRequestsRouter);
+app.use('/api/users/:userId/messages', messagesRouter);
+app.use('/api/users/:userId/notifications', notificationPreferencesRouter);
 app.use('/api/services', servicesRouter);
 
 app.use((_req, res) => {

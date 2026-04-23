@@ -57,6 +57,17 @@ authRouter.post('/register', async (req, res) => {
       });
     }
 
+    const notificationPreferenceCount = await tx.notificationPreference.count({ where: { userId: createdOrUpdatedUser.id } });
+    if (notificationPreferenceCount === 0) {
+      await tx.notificationPreference.createMany({
+        data: [
+          { userId: createdOrUpdatedUser.id, key: 'order-updates', enabled: true },
+          { userId: createdOrUpdatedUser.id, key: 'promotions', enabled: true },
+          { userId: createdOrUpdatedUser.id, key: 'messages', enabled: true }
+        ]
+      });
+    }
+
     return createdOrUpdatedUser;
   });
 

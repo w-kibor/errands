@@ -70,6 +70,8 @@ model User {
   riderOrders          Order[]              @relation("OrderRider")
   serviceRequests      ServiceRequest[]
   assignedServiceRequests ServiceRequest[]   @relation("AssignedRunner")
+  messages             Message[]
+  notificationPreferences NotificationPreference[]
 }
 
 model SavedAddress {
@@ -116,6 +118,7 @@ model Order {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   riderId     String?
   rider       User?       @relation("OrderRider", fields: [riderId], references: [id], onDelete: SetNull)
+  messages    Message[]
 
   @@index([userId])
   @@index([riderId])
@@ -140,4 +143,33 @@ model ServiceRequest {
 
   @@index([customerId])
   @@index([assignedRunnerId])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderId   String
+  text       String
+  isRider    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([userId])
+}
+
+model NotificationPreference {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key        String
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
 }

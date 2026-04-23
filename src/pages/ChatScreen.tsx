@@ -1,13 +1,22 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send, Phone } from 'lucide-react';
 import { mockMessages, mockRider } from '../data/mockData';
 import { Message } from '../types';
+import { useAppContext } from '../contexts/AppContext';
+import { apiRequest, BackendMessage } from '../lib/api';
 export const ChatScreen = () => {
   const navigate = useNavigate();
+  const { user, orders } = useAppContext();
+  const activeOrder = useMemo(
+    () => orders.find((order) => !['Delivered', 'Cancelled'].includes(order.status)) || orders[0] || null,
+    [orders]
+  );
+  const activeRider = activeOrder?.rider || mockRider;
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -17,28 +26,90 @@ export const ChatScreen = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  const handleSend = (e?: React.FormEvent) => {
+  useEffect(() => {
+    if (!user || !activeOrder) {
+      setMessages(mockMessages);
+      return;
+    }
+
+    setIsLoading(true);
+    void (async () => {
+      try {
+        const response = await apiRequest<{ messages: BackendMessage[] }>(
+          `/api/users/${user.id}/messages?orderId=${activeOrder.id}`
+        );
+
+        if (response.messages.length === 0) {
+          setMessages(mockMessages);
+          return;
+        }
+
+        setMessages(
+          response.messages.map((message) => ({
+            id: message.id,
+            senderId: message.senderId,
+            text: message.text,
+            timestamp: message.createdAt,
+            isRider: message.isRider
+          }))
+        );
+      } catch {
+        setMessages(mockMessages);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [user, activeOrder]);
+
+  const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!input.trim()) return;
-    const newMessage: Message = {
+    if (!input.trim() || !user || !activeOrder) return;
+
+    const outgoingText = input;
+    const optimisticMessage: Message = {
       id: Date.now().toString(),
-      senderId: 'u1',
-      text: input,
+      senderId: user.id,
+      text: outgoingText,
       timestamp: new Date().toISOString(),
       isRider: false
     };
-    setMessages([...messages, newMessage]);
+
+    setMessages((prev) => [...prev, optimisticMessage]);
     setInput('');
-    // Simulate reply
+
+    await apiRequest(`/api/users/${user.id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({
+        orderId: activeOrder.id,
+        senderId: user.id,
+        text: outgoingText,
+        isRider: false
+      })
+    });
+
     setTimeout(() => {
-      const reply: Message = {
-        id: (Date.now() + 1).toString(),
-        senderId: 'r1',
-        text: 'Okay, noted.',
-        timestamp: new Date().toISOString(),
-        isRider: true
-      };
-      setMessages((prev) => [...prev, reply]);
+      void (async () => {
+        const replyText = 'Okay, noted.';
+        const replyMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          senderId: activeRider.id,
+          text: replyText,
+          timestamp: new Date().toISOString(),
+          isRider: true
+        };
+
+        setMessages((prev) => [...prev, replyMessage]);
+
+        await apiRequest(`/api/users/${user.id}/messages`, {
+          method: 'POST',
+          body: JSON.stringify({
+            orderId: activeOrder.id,
+            senderId: activeRider.id,
+            text: replyText,
+            isRider: true
+          })
+        });
+      })();
     }, 2000);
   };
   const quickReplies = ["I'm at the gate", 'Please call me', 'Leave at door'];
@@ -70,15 +141,15 @@ export const ChatScreen = () => {
           <div className="flex items-center">
             <div className="relative">
               <img
-                src={mockRider.avatar}
+                src={activeRider.avatar}
                 alt="Rider"
                 className="w-10 h-10 rounded-full object-cover" />
               
               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="ml-3">
-              <h2 className="font-bold text-dark text-sm">{mockRider.name}</h2>
-              <p className="text-xs text-gray-500">Bajaj Boxer 150</p>
+              <h2 className="font-bold text-dark text-sm">{activeRider.name}</h2>
+              <p className="text-xs text-gray-500">{activeRider.vehicle}</p>
             </div>
           </div>
         </div>
@@ -94,6 +165,18 @@ export const ChatScreen = () => {
             Today
           </span>
         </div>
+
+        {isLoading && (
+          <div className="text-center text-xs text-gray-500 py-4">
+            Loading messages...
+          </div>
+        )}
+
+        {!activeOrder && (
+          <div className="text-center text-sm text-gray-500 py-10">
+            No active order found for chat.
+          </div>
+        )}
 
         {messages.map((msg) => {
           const time = new Date(msg.timestamp).toLocaleTimeString([], {

@@ -21,6 +21,7 @@ export const PriceEstimateScreen = () => {
     setIsConfirming(true);
     // Simulate API call to find rider
     setTimeout(() => {
+      void (async () => {
       const newOrder = {
         id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
         date: new Date().toISOString(),
@@ -43,13 +44,14 @@ export const PriceEstimateScreen = () => {
           lng: 36.8219
         }
       };
-      addOrder(newOrder);
+      await addOrder(newOrder);
       setDraftOrder(null);
       navigate('/tracking', {
         state: {
           orderId: newOrder.id
         }
       });
+      })();
     }, 2000);
   };
   return (
