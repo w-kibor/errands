@@ -5,7 +5,10 @@ import {
   DraftOrder,
   ServiceRequest,
   ServiceDefinition,
-  RunnerProfile
+  RunnerProfile,
+  SavedAddress,
+  SavedPaymentMethod,
+  PaymentMethodType
 } from '../types';
 import { mockOrders } from '../data/mockData';
 import { serviceDefinitions } from '../data/services';
@@ -23,8 +26,17 @@ interface AppContextType {
   setActiveTab: (tab: string) => void;
   services: ServiceDefinition[];
   serviceRequests: ServiceRequest[];
+  addresses: SavedAddress[];
+  paymentMethods: SavedPaymentMethod[];
   addServiceRequest: (request: ServiceRequest) => void;
   becomeRunner: (profile: RunnerProfile) => void;
+  addAddress: (data: { label: string; address: string; isPrimary?: boolean; }) => void;
+  updateAddress: (data: { id: string; label: string; address: string; isPrimary?: boolean; }) => void;
+  deleteAddress: (addressId: string) => void;
+  setPrimaryAddress: (addressId: string) => void;
+  addPaymentMethod: (data: { type: PaymentMethodType; label: string; details: string; isDefault?: boolean; }) => void;
+  setDefaultPaymentMethod: (methodId: string) => void;
+  deletePaymentMethod: (methodId: string) => void;
 }
 const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: {children: ReactNode;}) => {
@@ -33,6 +45,23 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [draftOrder, setDraftOrder] = useState<DraftOrder | null>(null);
   const [activeTab, setActiveTab] = useState('home');
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
+  const [addresses, setAddresses] = useState<SavedAddress[]>([
+    {
+      id: 'addr-1',
+      label: 'Home',
+      address: 'Kilimani, Nairobi',
+      isPrimary: true
+    }
+  ]);
+  const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([
+    {
+      id: 'pm-1',
+      type: 'M-Pesa',
+      label: 'Personal M-Pesa',
+      details: '*** *** 678',
+      isDefault: true
+    }
+  ]);
   const login = (phone: string, name?: string) => {
     setUser({
       id: 'u1',
@@ -81,6 +110,93 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const addServiceRequest = (request: ServiceRequest) => {
     setServiceRequests((prev) => [request, ...prev]);
   };
+  const addAddress = (data: { label: string; address: string; isPrimary?: boolean; }) => {
+    setAddresses((prev) => {
+      const makePrimary = Boolean(data.isPrimary) || prev.length === 0;
+      const nextExisting = makePrimary ? prev.map((item) => ({ ...item, isPrimary: false })) : prev;
+      const newAddress: SavedAddress = {
+        id: `addr-${Date.now()}`,
+        label: data.label,
+        address: data.address,
+        isPrimary: makePrimary
+      };
+      return [newAddress, ...nextExisting];
+    });
+  };
+  const updateAddress = (data: {
+    id: string;
+    label: string;
+    address: string;
+    isPrimary?: boolean;
+  }) => {
+    setAddresses((prev) => {
+      const next = prev.map((item) => {
+        if (item.id !== data.id) {
+          return data.isPrimary ? { ...item, isPrimary: false } : item;
+        }
+        return {
+          ...item,
+          label: data.label,
+          address: data.address,
+          isPrimary: Boolean(data.isPrimary)
+        };
+      });
+
+      if (next.length > 0 && !next.some((item) => item.isPrimary)) {
+        return next.map((item, index) => ({ ...item, isPrimary: index === 0 }));
+      }
+      return next;
+    });
+  };
+  const deleteAddress = (addressId: string) => {
+    setAddresses((prev) => {
+      const removed = prev.find((item) => item.id === addressId);
+      const next = prev.filter((item) => item.id !== addressId);
+
+      if (next.length === 0) return next;
+      if (removed?.isPrimary) {
+        return next.map((item, index) => ({ ...item, isPrimary: index === 0 }));
+      }
+      return next;
+    });
+  };
+  const setPrimaryAddress = (addressId: string) => {
+    setAddresses((prev) => prev.map((item) => ({ ...item, isPrimary: item.id === addressId })));
+  };
+  const addPaymentMethod = (data: {
+    type: PaymentMethodType;
+    label: string;
+    details: string;
+    isDefault?: boolean;
+  }) => {
+    setPaymentMethods((prev) => {
+      const makeDefault = Boolean(data.isDefault) || prev.length === 0;
+      const nextExisting = makeDefault ? prev.map((item) => ({ ...item, isDefault: false })) : prev;
+      const newMethod: SavedPaymentMethod = {
+        id: `pm-${Date.now()}`,
+        type: data.type,
+        label: data.label,
+        details: data.details,
+        isDefault: makeDefault
+      };
+      return [newMethod, ...nextExisting];
+    });
+  };
+  const setDefaultPaymentMethod = (methodId: string) => {
+    setPaymentMethods((prev) => prev.map((item) => ({ ...item, isDefault: item.id === methodId })));
+  };
+  const deletePaymentMethod = (methodId: string) => {
+    setPaymentMethods((prev) => {
+      const removed = prev.find((item) => item.id === methodId);
+      const next = prev.filter((item) => item.id !== methodId);
+
+      if (next.length === 0) return next;
+      if (removed?.isDefault) {
+        return next.map((item, index) => ({ ...item, isDefault: index === 0 }));
+      }
+      return next;
+    });
+  };
   const becomeRunner = (profile: RunnerProfile) => {
     setUser((prev) => {
       if (!prev) return prev;
@@ -107,8 +223,17 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
         setActiveTab,
         services: serviceDefinitions,
         serviceRequests,
+        addresses,
+        paymentMethods,
         addServiceRequest,
-        becomeRunner
+        becomeRunner,
+        addAddress,
+        updateAddress,
+        deleteAddress,
+        setPrimaryAddress,
+        addPaymentMethod,
+        setDefaultPaymentMethod,
+        deletePaymentMethod
       }}>
       
       {children}

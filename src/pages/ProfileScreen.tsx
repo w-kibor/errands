@@ -24,13 +24,15 @@ export const ProfileScreen = () => {
     icon: MapPin,
     label: 'My Addresses',
     color: 'text-blue-500',
-    bg: 'bg-blue-50'
+    bg: 'bg-blue-50',
+    path: '/addresses'
   },
   {
     icon: CreditCard,
     label: 'Payment Methods',
     color: 'text-green-500',
-    bg: 'bg-green-50'
+    bg: 'bg-green-50',
+    path: '/payment-methods'
   },
   {
     icon: Bell,
@@ -103,6 +105,7 @@ export const ProfileScreen = () => {
             return (
               <button
                 key={item.label}
+                onClick={() => item.path && navigate(item.path)}
                 className={`w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors ${index !== menuItems.length - 1 ? 'border-b border-gray-50' : ''}`}>
                 
                 <div className="flex items-center">

@@ -7,6 +7,23 @@ export type User = {
   runnerProfile?: RunnerProfile;
 };
 
+export interface SavedAddress {
+  id: string;
+  label: string;
+  address: string;
+  isPrimary: boolean;
+}
+
+export type PaymentMethodType = 'M-Pesa' | 'Card' | 'Cash on Delivery';
+
+export interface SavedPaymentMethod {
+  id: string;
+  type: PaymentMethodType;
+  label: string;
+  details: string;
+  isDefault: boolean;
+}
+
 export type ServiceType =
   | 'CBD Batch Delivery'
   | 'Personal Shopping'

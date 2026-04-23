@@ -49,7 +49,9 @@ export const BottomNav = () => {
   '/services',
   '/create-request',
   '/runner-signup',
-  '/edit-profile'];
+  '/edit-profile',
+  '/addresses',
+  '/payment-methods'];
 
   if (hiddenPaths.includes(location.pathname)) return null;
   return (
