@@ -8,10 +8,23 @@ export const OtpScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAppContext();
-  const email = location.state?.email || 'you@example.com';
-  const phone = location.state?.phone || '';
-  const isSignup = location.state?.isSignup || false;
-  const signupName = location.state?.name || '';
+  const storedAuth = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('swiftdrop_pending_auth') || 'null') as {
+        email?: string;
+        phone?: string;
+        name?: string;
+        purpose?: string;
+        isSignup?: boolean;
+      } | null;
+    } catch {
+      return null;
+    }
+  })();
+  const email = location.state?.email || storedAuth?.email || 'you@example.com';
+  const phone = location.state?.phone || storedAuth?.phone || '';
+  const isSignup = location.state?.isSignup || storedAuth?.isSignup || false;
+  const signupName = location.state?.name || storedAuth?.name || '';
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(30);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -42,6 +55,14 @@ export const OtpScreen = () => {
       window.alert('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the root .env file first.');
       return;
     }
+
+    sessionStorage.setItem('swiftdrop_pending_auth', JSON.stringify({
+      email,
+      phone,
+      name: signupName,
+      purpose: isSignup ? 'REGISTER' : 'LOGIN',
+      isSignup
+    }));
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -90,6 +111,7 @@ export const OtpScreen = () => {
       }
 
       await login(email, isSignup ? signupName : undefined, phone || undefined);
+      sessionStorage.removeItem('swiftdrop_pending_auth');
 
       navigate('/home');
     } catch (error) {

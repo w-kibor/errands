@@ -28,6 +28,11 @@ export const LoginScreen = () => {
           throw error;
         }
 
+        sessionStorage.setItem('swiftdrop_pending_auth', JSON.stringify({
+          email,
+          purpose: 'LOGIN'
+        }));
+
         navigate('/otp', {
           state: {
             email,

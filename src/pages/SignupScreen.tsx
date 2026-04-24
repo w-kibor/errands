@@ -40,6 +40,14 @@ export const SignupScreen = () => {
           throw error;
         }
 
+        sessionStorage.setItem('swiftdrop_pending_auth', JSON.stringify({
+          email,
+          phone,
+          name: name.trim(),
+          purpose: 'REGISTER',
+          isSignup: true
+        }));
+
         navigate('/otp', {
           state: {
             email,
