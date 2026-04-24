@@ -37,6 +37,7 @@ export type BackendPaymentMethod = {
 export type BackendUser = {
   id: string;
   name: string;
+  email: string | null;
   phone: string;
   avatar: string | null;
   isRunner: boolean;

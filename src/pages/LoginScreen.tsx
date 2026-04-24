@@ -1,18 +1,45 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronDown, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 export const LoginScreen = () => {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState('');
-  const handleSubmit = (e: React.FormEvent) => {
+  const [email, setEmail] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length > 5) {
-      navigate('/otp', {
-        state: {
-          phone
+    if (email.includes('@')) {
+      if (!isSupabaseConfigured || !supabase) {
+        window.alert('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the root .env file first.');
+        return;
+      }
+
+      setIsSending(true);
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false
+          }
+        });
+
+        if (error) {
+          throw error;
         }
-      });
+
+        navigate('/otp', {
+          state: {
+            email,
+            phone: '',
+            purpose: 'LOGIN'
+          }
+        });
+      } catch (error) {
+        window.alert(error instanceof Error ? error.message : 'Could not send code right now.');
+      } finally {
+        setIsSending(false);
+      }
     }
   };
   return (
@@ -34,40 +61,29 @@ export const LoginScreen = () => {
       <div className="flex-1">
         <h1 className="text-3xl font-bold text-dark mb-2">Welcome back</h1>
         <p className="text-gray-500 mb-8">
-          Enter your phone number to continue
+          Enter your email address to continue
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-dark">
-              Phone Number
+              Email Address
             </label>
-            <div className="flex border-2 border-gray-100 rounded-xl overflow-hidden focus-within:border-brand transition-colors">
-              <button
-                type="button"
-                className="flex items-center px-4 bg-gray-50 border-r border-gray-100 text-dark font-medium">
-                
-                <span>🇰🇪</span>
-                <span className="mx-2">+254</span>
-                <ChevronDown size={16} className="text-gray-400" />
-              </button>
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                placeholder="712 345 678"
-                className="flex-1 px-4 py-4 outline-none text-dark font-medium text-lg w-full"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
                 autoFocus />
-              
-            </div>
           </div>
 
           <button
             type="submit"
-            disabled={phone.length < 6}
-            className={`w-full py-4 rounded-full font-bold text-lg flex justify-center items-center transition-all ${phone.length >= 6 ? 'bg-brand text-dark shadow-md hover:bg-brand-light active:scale-[0.98]' : 'bg-gray-100 text-gray-400'}`}>
+            disabled={!email.includes('@') || isSending}
+            className={`w-full py-4 rounded-full font-bold text-lg flex justify-center items-center transition-all ${email.includes('@') ? 'bg-brand text-dark shadow-md hover:bg-brand-light active:scale-[0.98]' : 'bg-gray-100 text-gray-400'}`}>
             
-            Continue
+            {isSending ? 'Sending Code...' : 'Continue'}
             <ArrowRight size={20} className="ml-2" />
           </button>
         </form>

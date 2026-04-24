@@ -1,4 +1,4 @@
-import React, { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext, type ReactNode } from 'react';
 import {
   User,
   Order,
@@ -33,8 +33,8 @@ import {
 } from '../lib/api';
 interface AppContextType {
   user: User | null;
-  login: (phone: string, name?: string) => Promise<void>;
-  updateUserProfile: (data: { name: string; phone: string; avatar?: string; }) => Promise<void>;
+  login: (email: string, name?: string, phone?: string) => Promise<void>;
+  updateUserProfile: (data: { name: string; email?: string; phone: string; avatar?: string; }) => Promise<void>;
   logout: () => Promise<void>;
   orders: Order[];
   addOrder: (order: Order) => Promise<void>;
@@ -63,6 +63,7 @@ const USER_STORAGE_KEY = 'swiftdrop_user_id';
 const mapBackendUser = (backendUser: BackendUser): User => ({
   id: backendUser.id,
   name: backendUser.name,
+  email: backendUser.email || undefined,
   phone: backendUser.phone,
   avatar: backendUser.avatar || undefined,
   isRunner: backendUser.isRunner,
@@ -157,9 +158,18 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
   }, []);
 
-  const login = async (phone: string, name?: string) => {
+  const login = async (email: string, name?: string, phone?: string) => {
     const endpoint = name ? '/api/auth/register' : '/api/auth/login';
-    const payload = name ? { phone, name } : { phone };
+    const payload = name
+      ? {
+          email,
+          name,
+          phone
+        }
+      : {
+          email
+        };
+
     const response = await apiRequest<{ user: BackendUser }>(endpoint, {
       method: 'POST',
       body: JSON.stringify(payload)

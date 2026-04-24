@@ -2,16 +2,19 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { useAppContext } from '../contexts/AppContext';
 export const OtpScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAppContext();
-  const phone = location.state?.phone || '712 345 678';
+  const email = location.state?.email || 'you@example.com';
+  const phone = location.state?.phone || '';
   const isSignup = location.state?.isSignup || false;
   const signupName = location.state?.name || '';
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(30);
+  const [isVerifying, setIsVerifying] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,17 +33,71 @@ export const OtpScreen = () => {
     }
     // Check if complete
     if (newOtp.every((digit) => digit !== '')) {
-      // Simulate API call
-      setTimeout(() => {
-        void (async () => {
-          try {
-            await login(`+254 ${phone}`, isSignup ? signupName : undefined);
-            navigate('/home');
-          } catch {
-            window.alert('Could not verify your account right now. Please try again.');
-          }
-        })();
-      }, 500);
+      void verifyCode(newOtp.join(''));
+    }
+  };
+
+  const requestCode = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      window.alert('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the root .env file first.');
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: isSignup,
+        ...(isSignup
+          ? {
+              data: {
+                name: signupName,
+                phone
+              }
+            }
+          : {})
+      }
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    setOtp(['', '', '', '', '', '']);
+    setTimer(30);
+    inputRefs.current[0]?.focus();
+  };
+
+  const verifyCode = async (code: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      window.alert('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the root .env file first.');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'email'
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user) {
+        throw new Error('Verification succeeded but no user was returned.');
+      }
+
+      await login(email, isSignup ? signupName : undefined, phone || undefined);
+
+      navigate('/home');
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not verify your account right now. Please try again.');
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setIsVerifying(false);
     }
   };
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -73,8 +130,8 @@ export const OtpScreen = () => {
 
       <h1 className="text-3xl font-bold text-dark mb-2">Verify it's you</h1>
       <p className="text-gray-500 mb-8">
-        {isSignup ? 'Verify your number to create account: ' : 'We sent a code to '}
-        <span className="font-semibold text-dark">+254 {phone}</span>
+        {isSignup ? 'Verify your email to create account: ' : 'We sent a code to '}
+        <span className="font-semibold text-dark">{email}</span>
       </p>
 
       <div className="flex justify-between mb-8 px-2">
@@ -82,8 +139,9 @@ export const OtpScreen = () => {
         <input
           key={index}
           ref={(el) => inputRefs.current[index] = el}
-          type="number"
+          type="text"
           inputMode="numeric"
+          maxLength={1}
           value={digit}
           onChange={(e) => handleChange(index, e.target.value)}
           onKeyDown={(e) => handleKeyDown(index, e)}
@@ -103,13 +161,17 @@ export const OtpScreen = () => {
           </p> :
 
         <button
-          onClick={() => setTimer(30)}
+          onClick={() => void requestCode()}
           className="text-brand-dark font-bold hover:underline">
           
             Resend Code
           </button>
         }
       </div>
+
+      {isVerifying && (
+        <div className="mt-4 text-center text-xs text-gray-500">Verifying code...</div>
+      )}
     </motion.div>);
 
 };

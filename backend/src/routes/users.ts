@@ -6,6 +6,7 @@ export const usersRouter = Router();
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
+  email: z.string().email().optional().or(z.literal('')),
   phone: z.string().min(7).optional(),
   avatar: z.string().url().optional().or(z.literal('')),
   isRunner: z.boolean().optional(),
@@ -43,6 +44,7 @@ usersRouter.patch('/:userId', async (req, res) => {
     where: { id: userId },
     data: {
       ...(parsed.data.name ? { name: parsed.data.name } : {}),
+      ...(parsed.data.email !== undefined ? { email: parsed.data.email || null } : {}),
       ...(parsed.data.phone ? { phone: parsed.data.phone } : {}),
       ...(parsed.data.avatar !== undefined ? { avatar: parsed.data.avatar || null } : {}),
       ...(parsed.data.isRunner !== undefined ? { isRunner: parsed.data.isRunner } : {}),

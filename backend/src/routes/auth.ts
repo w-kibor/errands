@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 
@@ -6,14 +7,56 @@ export const authRouter = Router();
 
 const authSchema = z.object({
 	name: z.string().min(2).optional(),
-	phone: z.string().min(7),
+	email: z.string().email(),
+	phone: z.string().min(7).optional(),
 	avatar: z.string().url().optional().or(z.literal(''))
 });
 
+const seedDefaultProfileData = async (tx: Prisma.TransactionClient, userId: string) => {
+	const addressCount = await tx.savedAddress.count({ where: { userId } });
+	if (addressCount === 0) {
+		await tx.savedAddress.create({
+			data: {
+				userId,
+				label: 'Home',
+				address: 'Kilimani, Nairobi',
+				isPrimary: true
+			}
+		});
+	}
+
+	const paymentMethodCount = await tx.savedPaymentMethod.count({ where: { userId } });
+	if (paymentMethodCount === 0) {
+		await tx.savedPaymentMethod.create({
+			data: {
+				userId,
+				type: 'MPESA',
+				label: 'Personal M-Pesa',
+				details: '*** *** 678',
+				isDefault: true
+			}
+		});
+	}
+
+	const notificationPreferenceCount = await tx.notificationPreference.count({ where: { userId } });
+	if (notificationPreferenceCount === 0) {
+		await tx.notificationPreference.createMany({
+			data: [
+				{ userId, key: 'order-updates', enabled: true },
+				{ userId, key: 'promotions', enabled: true },
+				{ userId, key: 'messages', enabled: true }
+			]
+		});
+	}
+};
 authRouter.post('/register', async (req, res) => {
 	const parsed = authSchema.safeParse(req.body);
 	if (!parsed.success) {
 		return res.status(400).json({ error: 'Invalid registration payload', issues: parsed.error.flatten() });
+	}
+
+	if (!parsed.data.phone) {
+		return res.status(400).json({ error: 'Phone number is required for registration' });
 	}
 
 	const { phone, name, avatar } = parsed.data;
@@ -22,51 +65,19 @@ authRouter.post('/register', async (req, res) => {
 			where: { phone },
 			update: {
 				...(name ? { name } : {}),
+				...(parsed.data.email ? { email: parsed.data.email } : {}),
 				...(avatar ? { avatar } : {})
 			},
 			create: {
 				name: name || 'New User',
+				email: parsed.data.email || null,
 				phone,
 				avatar: avatar || null,
 				runnerCapabilities: []
 			}
 		});
 
-		const addressCount = await tx.savedAddress.count({ where: { userId: createdOrUpdatedUser.id } });
-		if (addressCount === 0) {
-			await tx.savedAddress.create({
-				data: {
-					userId: createdOrUpdatedUser.id,
-					label: 'Home',
-					address: 'Kilimani, Nairobi',
-					isPrimary: true
-				}
-			});
-		}
-
-		const paymentMethodCount = await tx.savedPaymentMethod.count({ where: { userId: createdOrUpdatedUser.id } });
-		if (paymentMethodCount === 0) {
-			await tx.savedPaymentMethod.create({
-				data: {
-					userId: createdOrUpdatedUser.id,
-					type: 'MPESA',
-					label: 'Personal M-Pesa',
-					details: '*** *** 678',
-					isDefault: true
-				}
-			});
-		}
-
-		const notificationPreferenceCount = await tx.notificationPreference.count({ where: { userId: createdOrUpdatedUser.id } });
-		if (notificationPreferenceCount === 0) {
-			await tx.notificationPreference.createMany({
-				data: [
-					{ userId: createdOrUpdatedUser.id, key: 'order-updates', enabled: true },
-					{ userId: createdOrUpdatedUser.id, key: 'promotions', enabled: true },
-					{ userId: createdOrUpdatedUser.id, key: 'messages', enabled: true }
-				]
-			});
-		}
+		await seedDefaultProfileData(tx, createdOrUpdatedUser.id);
 
 		return createdOrUpdatedUser;
 	});
@@ -75,13 +86,13 @@ authRouter.post('/register', async (req, res) => {
 });
 
 authRouter.post('/login', async (req, res) => {
-	const parsed = authSchema.pick({ phone: true }).safeParse(req.body);
+	const parsed = authSchema.pick({ email: true }).safeParse(req.body);
 	if (!parsed.success) {
-		return res.status(400).json({ error: 'Phone number is required' });
+		return res.status(400).json({ error: 'Email is required' });
 	}
 
-	const user = await prisma.user.findUnique({
-		where: { phone: parsed.data.phone }
+	const user = await prisma.user.findFirst({
+		where: { email: parsed.data.email }
 	});
 
 	if (!user) {

@@ -3,6 +3,7 @@
 
 1. Run `npm install`
 2. Run `npm run dev`
+3. Copy `.env.example` to `.env` and set your Supabase values
 
 ## Backend
 

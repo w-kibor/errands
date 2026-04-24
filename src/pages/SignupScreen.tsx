@@ -1,27 +1,59 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ChevronDown, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export const SignupScreen = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [step, setStep] = useState<'details' | 'verify'>('details');
+  const [isSending, setIsSending] = useState(false);
 
   const isNameValid = name.trim().length >= 2;
+  const isEmailValid = email.includes('@');
   const isPhoneValid = phone.length >= 9;
 
-  const handleContinue = (e: React.FormEvent) => {
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isNameValid && isPhoneValid) {
-      navigate('/otp', {
-        state: {
-          phone,
-          isSignup: true,
-          name: name.trim()
+    if (isNameValid && isEmailValid && isPhoneValid) {
+      if (!isSupabaseConfigured || !supabase) {
+        window.alert('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the root .env file first.');
+        return;
+      }
+
+      setIsSending(true);
+      try {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: true,
+            data: {
+              name: name.trim(),
+              phone: `+254 ${phone}`
+            }
+          }
+        });
+
+        if (error) {
+          throw error;
         }
-      });
+
+        navigate('/otp', {
+          state: {
+            email,
+            phone,
+            isSignup: true,
+            name: name.trim(),
+            purpose: 'REGISTER'
+          }
+        });
+      } catch (error) {
+        window.alert(error instanceof Error ? error.message : 'Could not send code right now.');
+      } finally {
+        setIsSending(false);
+      }
     }
   };
 
@@ -69,25 +101,33 @@ export const SignupScreen = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-dark">
+              Email Address
+            </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
+              />
+            {email.length > 0 && !email.includes('@') && (
+              <p className="text-xs text-red-500 mt-1">
+                Enter a valid email address
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-dark">
               Phone Number
             </label>
-            <div className="flex border-2 border-gray-100 rounded-xl overflow-hidden focus-within:border-brand transition-colors">
-              <button
-                type="button"
-                className="flex items-center px-4 bg-gray-50 border-r border-gray-100 text-dark font-medium"
-              >
-                <span>🇰🇪</span>
-                <span className="mx-2">+254</span>
-                <ChevronDown size={16} className="text-gray-400" />
-              </button>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                placeholder="712 345 678"
-                className="flex-1 px-4 py-4 outline-none text-dark font-medium text-lg w-full"
-              />
-            </div>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+              placeholder="712 345 678"
+              className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
+            />
             {phone.length > 0 && phone.length < 9 && (
               <p className="text-xs text-red-500 mt-1">
                 Phone number must be at least 9 digits
@@ -97,14 +137,14 @@ export const SignupScreen = () => {
 
           <button
             type="submit"
-            disabled={!isNameValid || !isPhoneValid}
+            disabled={!isNameValid || !isEmailValid || !isPhoneValid || isSending}
             className={`w-full py-4 rounded-full font-bold text-lg flex justify-center items-center transition-all ${
-              isNameValid && isPhoneValid
+              isNameValid && isEmailValid && isPhoneValid
                 ? 'bg-brand text-dark shadow-md hover:bg-brand-light active:scale-[0.98]'
                 : 'bg-gray-100 text-gray-400'
             }`}
           >
-            Create Account
+            {isSending ? 'Sending Code...' : 'Create Account'}
             <ArrowRight size={20} className="ml-2" />
           </button>
         </form>
