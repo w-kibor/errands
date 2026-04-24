@@ -4,7 +4,11 @@
 1. Run `npm install`
 2. Run `npm run dev`
 3. Copy `.env.example` to `.env` and set your Supabase values
-4. In Supabase Auth, enable email OTP codes instead of magic links
+4. Configure Supabase redirect URLs:
+	- In your Supabase project, go to Auth → Providers → Email
+	- Add redirect URL: `http://localhost:5173/auth/callback` (development)
+	- Add redirect URL: `https://yourdomain.com/auth/callback` (production)
+	- Users will be directed here after clicking the magic link in their email
 
 ## Backend
 

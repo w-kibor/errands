@@ -40,25 +40,11 @@ export const SignupScreen = () => {
           throw error;
         }
 
-        sessionStorage.setItem('swiftdrop_pending_auth', JSON.stringify({
-          email,
-          phone,
-          name: name.trim(),
-          purpose: 'REGISTER',
-          isSignup: true
-        }));
-
-        navigate('/otp', {
-          state: {
-            email,
-            phone,
-            isSignup: true,
-            name: name.trim(),
-            purpose: 'REGISTER'
-          }
+        navigate('/check-email', {
+          state: { email }
         });
       } catch (error) {
-        window.alert(error instanceof Error ? error.message : 'Could not send code right now.');
+        window.alert(error instanceof Error ? error.message : 'Could not send magic link right now.');
       } finally {
         setIsSending(false);
       }
@@ -111,13 +97,13 @@ export const SignupScreen = () => {
             <label className="text-sm font-medium text-dark">
               Email Address
             </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
-              />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
+            />
             {email.length > 0 && !email.includes('@') && (
               <p className="text-xs text-red-500 mt-1">
                 Enter a valid email address
@@ -152,7 +138,7 @@ export const SignupScreen = () => {
                 : 'bg-gray-100 text-gray-400'
             }`}
           >
-            {isSending ? 'Sending Code...' : 'Create Account'}
+            {isSending ? 'Sending Link...' : 'Create Account'}
             <ArrowRight size={20} className="ml-2" />
           </button>
         </form>

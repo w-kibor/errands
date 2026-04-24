@@ -7,6 +7,8 @@ import { SplashScreen } from './pages/SplashScreen';
 import { LoginScreen } from './pages/LoginScreen';
 import { OtpScreen } from './pages/OtpScreen';
 import { SignupScreen } from './pages/SignupScreen';
+import { AuthCallbackScreen } from './pages/AuthCallbackScreen';
+import { CheckEmailScreen } from './pages/CheckEmailScreen';
 import { HomeScreen } from './pages/HomeScreen';
 import { CreateDeliveryScreen } from './pages/CreateDeliveryScreen';
 import { PriceEstimateScreen } from './pages/PriceEstimateScreen';
@@ -48,6 +50,8 @@ const AppContent = () => {
               <Route path="/login" element={<LoginScreen />} />
               <Route path="/signup" element={<SignupScreen />} />
               <Route path="/otp" element={<OtpScreen />} />
+                            <Route path="/auth/callback" element={<AuthCallbackScreen />} />
+                            <Route path="/check-email" element={<CheckEmailScreen />} />
               <Route path="/home" element={<HomeScreen />} />
               <Route
                 path="/create-delivery"

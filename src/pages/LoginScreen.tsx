@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+
 export const LoginScreen = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.includes('@')) {
@@ -28,25 +30,17 @@ export const LoginScreen = () => {
           throw error;
         }
 
-        sessionStorage.setItem('swiftdrop_pending_auth', JSON.stringify({
-          email,
-          purpose: 'LOGIN'
-        }));
-
-        navigate('/otp', {
-          state: {
-            email,
-            phone: '',
-            purpose: 'LOGIN'
-          }
+        navigate('/check-email', {
+          state: { email }
         });
       } catch (error) {
-        window.alert(error instanceof Error ? error.message : 'Could not send code right now.');
+        window.alert(error instanceof Error ? error.message : 'Could not send magic link right now.');
       } finally {
         setIsSending(false);
       }
     }
   };
+
   return (
     <motion.div
       initial={{
@@ -74,13 +68,13 @@ export const LoginScreen = () => {
             <label className="text-sm font-medium text-dark">
               Email Address
             </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
-                autoFocus />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full border-2 border-gray-100 rounded-xl px-4 py-4 outline-none text-dark font-medium focus:border-brand transition-colors"
+              autoFocus />
           </div>
 
           <button
@@ -88,7 +82,7 @@ export const LoginScreen = () => {
             disabled={!email.includes('@') || isSending}
             className={`w-full py-4 rounded-full font-bold text-lg flex justify-center items-center transition-all ${email.includes('@') ? 'bg-brand text-dark shadow-md hover:bg-brand-light active:scale-[0.98]' : 'bg-gray-100 text-gray-400'}`}>
             
-            {isSending ? 'Sending Code...' : 'Continue'}
+            {isSending ? 'Sending Link...' : 'Continue'}
             <ArrowRight size={20} className="ml-2" />
           </button>
         </form>
@@ -114,6 +108,6 @@ export const LoginScreen = () => {
           <span className="text-brand-dark font-medium">Privacy Policy</span>.
         </p>
       </div>
-    </motion.div>);
-
+    </motion.div>
+  );
 };
