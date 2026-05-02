@@ -158,6 +158,23 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
   }, []);
 
+  // Dev-only: auto-login when VITE_DEV_AUTH_USER is set.
+  // Set VITE_DEV_AUTH_USER=<userId> in your .env to auto-hydrate that user.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    const storedUserId = localStorage.getItem(USER_STORAGE_KEY);
+    if (storedUserId) return;
+
+    const devUser = import.meta.env.VITE_DEV_AUTH_USER;
+    if (!devUser) return;
+
+    localStorage.setItem(USER_STORAGE_KEY, devUser);
+    hydrateUser(devUser).catch(() => {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    });
+  }, []);
+
   const login = async (email: string, name?: string, phone?: string) => {
     const endpoint = name ? '/api/auth/register' : '/api/auth/login';
     const payload = name

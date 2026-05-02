@@ -9,12 +9,15 @@ import { serviceRequestsRouter } from './routes/service-requests.js';
 import { messagesRouter } from './routes/messages.js';
 import { notificationPreferencesRouter } from './routes/notification-preferences.js';
 import { servicesRouter } from './routes/services.js';
+import { adminBypass } from './middleware/adminBypass.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
 app.use(cors({ origin: true }));
 app.use(express.json());
+
+app.use(adminBypass);
 
 app.get('/health', (_req, res) => {
   res.json({ ok: true, service: 'SwiftDrop API' });
