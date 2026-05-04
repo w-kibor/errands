@@ -20,3 +20,15 @@ A PostgreSQL-backed backend scaffold is available in `backend/`.
 4. Run `npm run prisma:generate`
 5. Run `npm run prisma:migrate`
 6. Run `npm run dev`
+
+## Mobile App (React Native)
+
+A React Native app target is now available in `mobile/` using Expo.
+
+1. Go to `mobile/`
+2. Copy `.env.example` to `.env`
+3. Set `EXPO_PUBLIC_API_BASE_URL`
+4. Run `npm install`
+5. Run `npm run start`
+
+See `mobile/README.md` for Android/iOS/device backend URL details and migration guidance.
