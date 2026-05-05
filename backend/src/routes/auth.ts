@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { sendWelcomeEmail } from '../lib/email.js';
 
 export const authRouter = Router();
 
@@ -81,6 +82,18 @@ authRouter.post('/register', async (req, res) => {
 
 		return createdOrUpdatedUser;
 	});
+
+	// Send welcome email if email is provided
+	if (user.email) {
+		const firstName = user.name?.split(' ')[0] || 'Friend';
+		await sendWelcomeEmail(user.email, {
+			firstName,
+			appUrl: process.env.APP_BASE_URL || 'https://swiftdrop.co.ke'
+		}).catch(err => {
+			// Log email error but don't fail the registration
+			console.warn('Failed to send welcome email:', err);
+		});
+	}
 
 	return res.status(201).json({ user });
 });
