@@ -7,6 +7,7 @@
     "dev": "NODE_ENV=development tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
+    "test:email": "tsx src/tests/email.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
@@ -14,7 +15,9 @@
   "dependencies": {
     "@prisma/client": "^6.16.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
     "express": "^4.21.2",
+    "postmark": "^4.0.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {
