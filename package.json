@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "npx vite",
     "build": "npx vite build",
+    "vercel-build": "npx vite build && echo 'VERCEL_DEBUG: working dir' && pwd && echo 'VERCEL_DEBUG: ls -la' && ls -la && echo 'VERCEL_DEBUG: ls ./dist (if exists)' && ls -la ./dist || true",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "preview": "npx vite preview"
   },
