@@ -40,7 +40,10 @@ export const BottomNav = () => {
   const hiddenPaths = [
   '/',
   '/login',
+  '/signup',
   '/otp',
+  '/check-email',
+  '/auth/callback',
   '/create-delivery',
   '/estimate',
   '/tracking',

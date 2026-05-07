@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AppProvider } from './contexts/AppContext';
 import { BottomNav } from './components/BottomNav';
+import { useAppContext } from './contexts/AppContext';
 // Pages
 import { SplashScreen } from './pages/SplashScreen';
 import { LoginScreen } from './pages/LoginScreen';
@@ -27,7 +28,41 @@ import { ShopErrandsScreen } from './pages/ShopErrandsScreen';
 import { ServicesScreen } from './pages/ServicesScreen';
 import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
 import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
+
+const protectedPaths = [
+  '/home',
+  '/create-delivery',
+  '/estimate',
+  '/tracking',
+  '/orders',
+  '/chat',
+  '/rating',
+  '/profile',
+  '/edit-profile',
+  '/addresses',
+  '/payment-methods',
+  '/notifications',
+  '/help-support',
+  '/about',
+  '/shop-errands',
+  '/services',
+  '/create-request',
+  '/runner-signup'
+];
+
+const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
+  const { user } = useAppContext();
+  const location = useLocation();
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return children;
+};
+
 const AppContent = () => {
+  const { user } = useAppContext();
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-200">
       {/* Mobile Device Frame */}
@@ -50,36 +85,33 @@ const AppContent = () => {
               <Route path="/login" element={<LoginScreen />} />
               <Route path="/signup" element={<SignupScreen />} />
               <Route path="/otp" element={<OtpScreen />} />
-                            <Route path="/auth/callback" element={<AuthCallbackScreen />} />
-                            <Route path="/check-email" element={<CheckEmailScreen />} />
-              <Route path="/home" element={<HomeScreen />} />
-              <Route
-                path="/create-delivery"
-                element={<CreateDeliveryScreen />} />
-              
-              <Route path="/estimate" element={<PriceEstimateScreen />} />
-              <Route path="/tracking" element={<TrackingScreen />} />
-              <Route path="/orders" element={<OrderHistoryScreen />} />
-              <Route path="/chat" element={<ChatScreen />} />
-              <Route path="/rating" element={<RatingScreen />} />
-              <Route path="/profile" element={<ProfileScreen />} />
-              <Route path="/edit-profile" element={<EditProfileScreen />} />
-              <Route path="/addresses" element={<AddressesScreen />} />
-              <Route path="/payment-methods" element={<PaymentMethodsScreen />} />
-              <Route path="/notifications" element={<NotificationsScreen />} />
-              <Route path="/help-support" element={<HelpSupportScreen />} />
-              <Route path="/about" element={<AboutScreen />} />
-              <Route path="/shop-errands" element={<ShopErrandsScreen />} />
-              <Route path="/services" element={<ServicesScreen />} />
-              <Route path="/create-request" element={<CreateServiceRequestScreen />} />
-              <Route path="/runner-signup" element={<RunnerSignupScreen />} />
+              <Route path="/auth/callback" element={<AuthCallbackScreen />} />
+              <Route path="/check-email" element={<CheckEmailScreen />} />
+              <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
+              <Route path="/create-delivery" element={<ProtectedRoute><CreateDeliveryScreen /></ProtectedRoute>} />
+              <Route path="/estimate" element={<ProtectedRoute><PriceEstimateScreen /></ProtectedRoute>} />
+              <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><OrderHistoryScreen /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><ChatScreen /></ProtectedRoute>} />
+              <Route path="/rating" element={<ProtectedRoute><RatingScreen /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+              <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
+              <Route path="/addresses" element={<ProtectedRoute><AddressesScreen /></ProtectedRoute>} />
+              <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsScreen /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
+              <Route path="/help-support" element={<ProtectedRoute><HelpSupportScreen /></ProtectedRoute>} />
+              <Route path="/about" element={<ProtectedRoute><AboutScreen /></ProtectedRoute>} />
+              <Route path="/shop-errands" element={<ProtectedRoute><ShopErrandsScreen /></ProtectedRoute>} />
+              <Route path="/services" element={<ProtectedRoute><ServicesScreen /></ProtectedRoute>} />
+              <Route path="/create-request" element={<ProtectedRoute><CreateServiceRequestScreen /></ProtectedRoute>} />
+              <Route path="/runner-signup" element={<ProtectedRoute><RunnerSignupScreen /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>
         </div>
 
         {/* Bottom Navigation */}
-        <BottomNav />
+        {user ? <BottomNav /> : null}
       </div>
     </div>);
 

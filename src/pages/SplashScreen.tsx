@@ -2,14 +2,16 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Package } from 'lucide-react';
+import { useAppContext } from '../contexts/AppContext';
 export const SplashScreen = () => {
   const navigate = useNavigate();
+  const { user } = useAppContext();
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate('/login');
+      navigate(user ? '/home' : '/login');
     }, 2500);
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, user]);
   return (
     <div className="flex flex-col items-center justify-center h-full bg-brand relative overflow-hidden">
       {/* Background decorative circles */}
