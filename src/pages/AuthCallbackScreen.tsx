@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../contexts/AppContext';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 
 /**
@@ -10,7 +9,6 @@ import { isSupabaseConfigured, supabase } from '../lib/supabase';
  */
 export const AuthCallbackScreen = () => {
   const navigate = useNavigate();
-  const { login } = useAppContext();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -32,19 +30,9 @@ export const AuthCallbackScreen = () => {
         }
 
         // User email is guaranteed from Supabase auth
-        const email = user.email || '';
         const userMetadata = user.user_metadata || {};
-        const name = userMetadata.name as string | undefined;
-        const phone = userMetadata.phone as string | undefined;
 
-        // Log in via backend
-        try {
-          await login(email, name, phone);
-        } catch (e) {
-          // If backend login fails, still navigate to home
-          // The user is authenticated with Supabase at least
-          console.warn('Backend login failed:', e);
-        }
+        sessionStorage.setItem('swiftdrop_magic_link_verified', 'true');
 
         // Clear any pending auth from sessionStorage
         sessionStorage.removeItem('swiftdrop_pending_auth');
@@ -65,7 +53,7 @@ export const AuthCallbackScreen = () => {
     };
 
     handleCallback();
-  }, [navigate, login]);
+  }, [navigate]);
 
   return (
     <div className="flex flex-col h-full bg-white px-6 pt-12 pb-8 justify-center items-center">

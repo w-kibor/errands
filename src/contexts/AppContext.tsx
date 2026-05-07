@@ -236,6 +236,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     setAddresses([]);
     setPaymentMethods([]);
     localStorage.removeItem(USER_STORAGE_KEY);
+    sessionStorage.removeItem('swiftdrop_magic_link_verified');
     setIsHydrating(false);
   };
   const addOrder = async (order: Order) => {
