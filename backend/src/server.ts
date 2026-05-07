@@ -14,7 +14,30 @@ import { adminBypass } from './middleware/adminBypass.js';
 const app = express();
 const port = Number(process.env.PORT || 4000);
 
-app.use(cors({ origin: true }));
+// Configure CORS to allow development and production origins
+const allowedOrigins = [
+  'http://localhost:3000',    // Local dev (if using port 3000)
+  'http://localhost:5173',    // Vite dev server
+  'https://errand-shop.vercel.app', // Production frontend
+  'https://errands-agb5.onrender.com' // Allow same-origin requests during testing
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 app.use(adminBypass);
