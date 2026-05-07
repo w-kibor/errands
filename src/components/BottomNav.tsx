@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, FileText, MessageCircle, User } from 'lucide-react';
+import { Home, FileText, Inbox, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
 export const BottomNav = () => {
@@ -20,9 +20,9 @@ export const BottomNav = () => {
     path: '/orders'
   },
   {
-    id: 'chat',
-    label: 'Chat',
-    icon: MessageCircle,
+    id: 'inbox',
+    label: 'Inbox',
+    icon: Inbox,
     path: '/chat'
   },
   {
