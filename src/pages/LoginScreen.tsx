@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { getAuthCallbackUrl, isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export const LoginScreen = () => {
   const navigate = useNavigate();
@@ -22,7 +22,8 @@ export const LoginScreen = () => {
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            shouldCreateUser: false
+            shouldCreateUser: false,
+            emailRedirectTo: getAuthCallbackUrl()
           }
         });
 

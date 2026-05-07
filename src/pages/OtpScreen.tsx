@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { getAuthCallbackUrl, isSupabaseConfigured, supabase } from '../lib/supabase';
 import { useAppContext } from '../contexts/AppContext';
 export const OtpScreen = () => {
   const navigate = useNavigate();
@@ -68,6 +68,7 @@ export const OtpScreen = () => {
       email,
       options: {
         shouldCreateUser: isSignup,
+        emailRedirectTo: getAuthCallbackUrl(),
         ...(isSignup
           ? {
               data: {

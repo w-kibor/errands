@@ -21,8 +21,10 @@ export const AuthCallbackScreen = () => {
       }
 
       try {
-        // Supabase automatically creates session from URL hash
-        const { data: { user }, error } = await supabase.auth.getUser();
+        const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
+
+        const user = exchangeData.session?.user ?? exchangeData.user;
+        const error = exchangeError;
 
         if (error || !user) {
           throw new Error(error?.message || 'Failed to verify magic link');
