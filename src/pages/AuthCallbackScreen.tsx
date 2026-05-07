@@ -21,7 +21,11 @@ export const AuthCallbackScreen = () => {
       }
 
       try {
-        const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        const authCode = new URLSearchParams(window.location.search).get('code');
+
+        const { data: exchangeData, error: exchangeError } = authCode
+          ? await supabase.auth.exchangeCodeForSession(authCode)
+          : { data: { session: null, user: null }, error: null };
 
         const user = exchangeData.session?.user ?? exchangeData.user;
         const error = exchangeError;
@@ -48,8 +52,10 @@ export const AuthCallbackScreen = () => {
         // Clear any pending auth from sessionStorage
         sessionStorage.removeItem('swiftdrop_pending_auth');
 
-        // Redirect to home
-        navigate('/home', { replace: true });
+        const isRunnerSignup = Boolean(userMetadata.isRunner);
+
+        // Redirect to runner onboarding or home
+        navigate(isRunnerSignup ? '/runner-signup' : '/home', { replace: true });
       } catch (error) {
         console.error('Auth callback error:', error);
         window.alert(error instanceof Error ? error.message : 'Authentication failed');

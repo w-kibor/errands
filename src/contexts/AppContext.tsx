@@ -48,7 +48,7 @@ interface AppContextType {
   addresses: SavedAddress[];
   paymentMethods: SavedPaymentMethod[];
   addServiceRequest: (request: ServiceRequest) => Promise<void>;
-  becomeRunner: (profile: RunnerProfile) => void;
+  becomeRunner: (profile: RunnerProfile) => Promise<void>;
   addAddress: (data: { label: string; address: string; isPrimary?: boolean; }) => void;
   updateAddress: (data: { id: string; label: string; address: string; isPrimary?: boolean; }) => void;
   deleteAddress: (addressId: string) => void;
@@ -368,15 +368,21 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
-  const becomeRunner = (profile: RunnerProfile) => {
-    setUser((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
+  const becomeRunner = async (profile: RunnerProfile) => {
+    if (!user) return;
+
+    const response = await apiRequest<{ user: BackendUser }>(`/api/users/${user.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
         isRunner: true,
-        runnerProfile: profile
-      };
+        runnerVehicleType: profile.vehicleType,
+        runnerCoverageArea: profile.coverageArea,
+        runnerCapabilities: profile.capabilities,
+        runnerVerified: profile.verified
+      })
     });
+
+    setUser(mapBackendUser(response.user));
   };
   return (
     <AppContext.Provider

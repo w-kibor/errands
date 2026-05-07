@@ -52,7 +52,7 @@ export const CheckEmailScreen = () => {
             <strong>Click the link in your email</strong> to verify your account and sign in to SwiftDrop.
           </p>
           <p className="text-xs text-blue-800">
-            The link will take you directly to your home screen.
+            The link will take you directly into your account, or to runner setup if you chose that option.
           </p>
         </div>
 

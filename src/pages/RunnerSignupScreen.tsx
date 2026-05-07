@@ -17,6 +17,7 @@ const capabilityOptions: ServiceType[] = [
 export const RunnerSignupScreen = () => {
   const navigate = useNavigate();
   const { becomeRunner } = useAppContext();
+  const [isSaving, setIsSaving] = useState(false);
 
   const [vehicleType, setVehicleType] = useState('');
   const [coverageArea, setCoverageArea] = useState('Westlands / Kilimani / Upper Hill');
@@ -32,17 +33,25 @@ export const RunnerSignupScreen = () => {
 
   const isValid = vehicleType.trim().length > 2 && capabilities.length > 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isValid) return;
 
-    becomeRunner({
-      vehicleType: vehicleType.trim(),
-      coverageArea: coverageArea.trim(),
-      capabilities,
-      verified: false
-    });
+    setIsSaving(true);
 
-    navigate('/profile');
+    try {
+      await becomeRunner({
+        vehicleType: vehicleType.trim(),
+        coverageArea: coverageArea.trim(),
+        capabilities,
+        verified: false
+      });
+
+      navigate('/profile');
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not save runner profile right now.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -117,14 +126,14 @@ export const RunnerSignupScreen = () => {
       <div className="bg-white border-t border-gray-100 p-4 pb-safe absolute bottom-0 left-0 right-0 shadow-up">
         <button
           onClick={handleSubmit}
-          disabled={!isValid}
+          disabled={!isValid || isSaving}
           className={`w-full py-4 rounded-full font-bold text-lg transition-all ${
-            isValid
+            isValid && !isSaving
               ? 'bg-brand text-dark shadow-md active:scale-[0.98]'
               : 'bg-gray-100 text-gray-400'
           }`}
         >
-          Submit Runner Profile
+          {isSaving ? 'Saving...' : 'Submit Runner Profile'}
         </button>
       </div>
     </motion.div>

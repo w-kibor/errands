@@ -29,27 +29,6 @@ import { ServicesScreen } from './pages/ServicesScreen';
 import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
 import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
 
-const protectedPaths = [
-  '/home',
-  '/create-delivery',
-  '/estimate',
-  '/tracking',
-  '/orders',
-  '/chat',
-  '/rating',
-  '/profile',
-  '/edit-profile',
-  '/addresses',
-  '/payment-methods',
-  '/notifications',
-  '/help-support',
-  '/about',
-  '/shop-errands',
-  '/services',
-  '/create-request',
-  '/runner-signup'
-];
-
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { user } = useAppContext();
   const location = useLocation();

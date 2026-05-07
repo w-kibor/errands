@@ -89,19 +89,6 @@ export const ProfileScreen = () => {
 
       {/* Menu List */}
       <div className="px-6 space-y-3">
-        <button
-          onClick={() => navigate('/runner-signup')}
-          className="w-full flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors"
-        >
-          <div className="text-left">
-            <p className="text-xs font-medium text-gray-500">Runner Mode</p>
-            <p className="font-bold text-dark">
-              {user?.isRunner ? 'Runner profile active' : 'Become a runner'}
-            </p>
-          </div>
-          <ChevronRight size={20} className="text-gray-400" />
-        </button>
-
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {menuItems.map((item, index) => {
             const Icon = item.icon;

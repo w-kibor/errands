@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
+import { apiRequest } from '../lib/api';
 import { getAuthCallbackUrl, isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export const SignupScreen = () => {
@@ -9,6 +10,7 @@ export const SignupScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [isRunnerSignup, setIsRunnerSignup] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
   const isNameValid = name.trim().length >= 2;
@@ -25,6 +27,14 @@ export const SignupScreen = () => {
 
       setIsSending(true);
       try {
+        await apiRequest('/api/auth/check-signup', {
+          method: 'POST',
+          body: JSON.stringify({
+            email,
+            phone: `+254 ${phone}`
+          })
+        });
+
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -32,7 +42,8 @@ export const SignupScreen = () => {
             emailRedirectTo: getAuthCallbackUrl(),
             data: {
               name: name.trim(),
-              phone: `+254 ${phone}`
+              phone: `+254 ${phone}`,
+              isRunner: isRunnerSignup
             }
           }
         });
@@ -45,7 +56,18 @@ export const SignupScreen = () => {
           state: { email }
         });
       } catch (error) {
-        window.alert(error instanceof Error ? error.message : 'Could not send magic link right now.');
+        const message = error instanceof Error ? error.message : 'Could not send magic link right now.';
+
+        if (message.toLowerCase().includes('already exists')) {
+          window.alert(message);
+          navigate('/login', {
+            replace: true,
+            state: { email }
+          });
+          return;
+        }
+
+        window.alert(message);
       } finally {
         setIsSending(false);
       }
@@ -143,6 +165,22 @@ export const SignupScreen = () => {
             <ArrowRight size={20} className="ml-2" />
           </button>
         </form>
+
+        <button
+          type="button"
+          onClick={() => setIsRunnerSignup((prev) => !prev)}
+          className={`mt-4 w-full flex items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors ${
+            isRunnerSignup ? 'border-brand bg-brand/10' : 'border-gray-200 bg-white hover:border-brand/40'
+          }`}
+        >
+          <div>
+            <p className="font-semibold text-dark">Sign up as a runner</p>
+            <p className="text-xs text-gray-500">You can complete runner details after email verification.</p>
+          </div>
+          <span className={`flex h-6 w-6 items-center justify-center rounded-full border ${isRunnerSignup ? 'border-brand bg-brand text-dark' : 'border-gray-300'}`}>
+            {isRunnerSignup && <Check size={14} />}
+          </span>
+        </button>
 
         {/* Already have account? */}
         <div className="mt-6 text-center">
