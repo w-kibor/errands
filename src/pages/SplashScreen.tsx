@@ -5,13 +5,15 @@ import { Package } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 export const SplashScreen = () => {
   const navigate = useNavigate();
-  const { user } = useAppContext();
+  const { user, isHydrating } = useAppContext();
   useEffect(() => {
+    if (isHydrating) return;
+
     const timer = setTimeout(() => {
       navigate(user ? '/home' : '/login');
     }, 2500);
     return () => clearTimeout(timer);
-  }, [navigate, user]);
+  }, [navigate, user, isHydrating]);
   return (
     <div className="flex flex-col items-center justify-center h-full bg-brand relative overflow-hidden">
       {/* Background decorative circles */}

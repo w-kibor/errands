@@ -30,8 +30,19 @@ import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
 import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-  const { user } = useAppContext();
+  const { user, isHydrating } = useAppContext();
   const location = useLocation();
+
+  if (isHydrating) {
+    return (
+      <div className="flex h-full items-center justify-center bg-white">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-gray-500">Loading your account...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location }} />;

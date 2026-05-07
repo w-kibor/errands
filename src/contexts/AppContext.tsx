@@ -33,6 +33,7 @@ import {
 } from '../lib/api';
 interface AppContextType {
   user: User | null;
+  isHydrating: boolean;
   login: (email: string, name?: string, phone?: string) => Promise<void>;
   updateUserProfile: (data: { name: string; email?: string; phone: string; avatar?: string; }) => Promise<void>;
   logout: () => Promise<void>;
@@ -128,6 +129,7 @@ const mapBackendServiceRequest = (request: BackendServiceRequest): ServiceReques
 
 export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isHydrating, setIsHydrating] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [draftOrder, setDraftOrder] = useState<DraftOrder | null>(null);
   const [activeTab, setActiveTab] = useState('home');
@@ -150,12 +152,22 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   };
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem(USER_STORAGE_KEY);
-    if (!storedUserId) return;
+    const bootstrap = async () => {
+      try {
+        const storedUserId = localStorage.getItem(USER_STORAGE_KEY);
+        if (!storedUserId) {
+          return;
+        }
 
-    hydrateUser(storedUserId).catch(() => {
-      localStorage.removeItem(USER_STORAGE_KEY);
-    });
+        await hydrateUser(storedUserId);
+      } catch {
+        localStorage.removeItem(USER_STORAGE_KEY);
+      } finally {
+        setIsHydrating(false);
+      }
+    };
+
+    void bootstrap();
   }, []);
 
   // Dev-only: auto-login when VITE_DEV_AUTH_USER is set.
@@ -172,10 +184,14 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     localStorage.setItem(USER_STORAGE_KEY, devUser);
     hydrateUser(devUser).catch(() => {
       localStorage.removeItem(USER_STORAGE_KEY);
+    }).finally(() => {
+      setIsHydrating(false);
     });
   }, []);
 
   const login = async (email: string, name?: string, phone?: string) => {
+    setIsHydrating(true);
+
     const endpoint = name ? '/api/auth/register' : '/api/auth/login';
     const payload = name
       ? {
@@ -193,7 +209,11 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
 
     localStorage.setItem(USER_STORAGE_KEY, response.user.id);
-    await hydrateUser(response.user.id);
+    try {
+      await hydrateUser(response.user.id);
+    } finally {
+      setIsHydrating(false);
+    }
   };
   const updateUserProfile = async (data: {
     name: string;
@@ -216,6 +236,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     setAddresses([]);
     setPaymentMethods([]);
     localStorage.removeItem(USER_STORAGE_KEY);
+    setIsHydrating(false);
   };
   const addOrder = async (order: Order) => {
     if (!user) {
@@ -248,7 +269,6 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
       method: 'PATCH',
       body: JSON.stringify({ status: toBackendOrderStatus(status) })
     });
-
     const mappedOrder = mapBackendOrder(response.order);
     setOrders((prev) => prev.map((item) => item.id === mappedOrder.id ? mappedOrder : item));
   };
@@ -388,6 +408,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     <AppContext.Provider
       value={{
         user,
+        isHydrating,
         login,
         updateUserProfile,
         logout,
