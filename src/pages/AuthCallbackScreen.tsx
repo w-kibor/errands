@@ -21,14 +21,11 @@ export const AuthCallbackScreen = () => {
       }
 
       try {
-        const authCode = new URLSearchParams(window.location.search).get('code');
+        // Supabase automatically processes the hash fragment from the magic link
+        // Give it a moment to establish the session
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        const { data: exchangeData, error: exchangeError } = authCode
-          ? await supabase.auth.exchangeCodeForSession(authCode)
-          : { data: { session: null, user: null }, error: null };
-
-        const user = exchangeData.session?.user ?? exchangeData.user;
-        const error = exchangeError;
+        const { data: { user }, error } = await supabase.auth.getUser();
 
         if (error || !user) {
           throw new Error(error?.message || 'Failed to verify magic link');
