@@ -32,6 +32,7 @@ import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { user, isHydrating } = useAppContext();
   const location = useLocation();
+  const verifiedMagicLink = sessionStorage.getItem('swiftdrop_magic_link_verified') === 'true';
 
   if (isHydrating) {
     return (
@@ -44,7 +45,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
     );
   }
 
-  if (!user) {
+  if (!user && !verifiedMagicLink) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
@@ -53,6 +54,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
 
 const AppContent = () => {
   const { user } = useAppContext();
+  const verifiedMagicLink = sessionStorage.getItem('swiftdrop_magic_link_verified') === 'true';
+  const canAccessApp = Boolean(user || verifiedMagicLink);
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-200">
       {/* Mobile Device Frame */}
@@ -101,7 +104,7 @@ const AppContent = () => {
         </div>
 
         {/* Bottom Navigation */}
-        {user ? <BottomNav /> : null}
+        {canAccessApp ? <BottomNav /> : null}
       </div>
     </div>);
 
