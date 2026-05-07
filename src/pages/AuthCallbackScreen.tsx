@@ -51,6 +51,10 @@ export const AuthCallbackScreen = () => {
 
         const isRunnerSignup = Boolean(userMetadata.isRunner);
 
+        // Wait for React to process the state update before navigating
+        // This ensures the ProtectedRoute sees the updated user context
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         // Redirect to runner onboarding or home
         navigate(isRunnerSignup ? '/runner-signup' : '/home', { replace: true });
       } catch (error) {
