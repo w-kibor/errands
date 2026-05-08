@@ -11,6 +11,7 @@ import {
 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { OrderCard } from '../components/OrderCard';
+import { ProfileAvatar } from '../components/ProfileAvatar';
 export const HomeScreen = () => {
   const navigate = useNavigate();
   const { user, orders } = useAppContext();
@@ -29,10 +30,12 @@ export const HomeScreen = () => {
       <div className="bg-white px-6 pt-10 pb-4 rounded-b-3xl shadow-sm z-10">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center space-x-3">
-            <img
+            <ProfileAvatar
               src={user?.avatar}
-              alt="Profile"
-              className="w-12 h-12 rounded-full border-2 border-brand object-cover" />
+              name={user?.name}
+              size={48}
+              className="border-2 border-brand"
+            />
             
             <div>
               <p className="text-xs text-gray-500 font-medium">Good morning,</p>

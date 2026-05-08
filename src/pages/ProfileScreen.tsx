@@ -12,6 +12,7 @@ import {
   Edit2 } from
 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
+import { ProfileAvatar } from '../components/ProfileAvatar';
 export const ProfileScreen = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppContext();
@@ -70,10 +71,12 @@ export const ProfileScreen = () => {
       <div className="bg-white px-6 pt-12 pb-8 shadow-sm rounded-b-3xl mb-6 relative">
         <div className="flex flex-col items-center">
           <div className="relative mb-4">
-            <img
-              src={user?.avatar || 'https://via.placeholder.com/150'}
-              alt="Profile"
-              className="w-24 h-24 rounded-full object-cover border-4 border-brand/20" />
+            <ProfileAvatar
+              src={user?.avatar}
+              name={user?.name}
+              size={96}
+              className="border-4 border-brand/20"
+            />
             
             <button
               onClick={() => navigate('/edit-profile')}

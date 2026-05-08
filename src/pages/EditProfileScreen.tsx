@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Camera } from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
+import { ProfileAvatar } from '../components/ProfileAvatar';
 
 export const EditProfileScreen = () => {
   const navigate = useNavigate();
@@ -190,10 +191,11 @@ export const EditProfileScreen = () => {
           <label className="text-sm font-semibold text-dark">Profile Picture</label>
           <div className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center">
-              <img
-                src={avatar || 'https://via.placeholder.com/150'}
-                alt="Avatar preview"
-                className="w-14 h-14 rounded-full object-cover border-2 border-brand/20"
+              <ProfileAvatar
+                src={avatar}
+                name={name}
+                size={56}
+                className="border-2 border-brand/20"
               />
               <div className="ml-3">
                 <p className="text-sm font-semibold text-dark">Upload from device</p>
