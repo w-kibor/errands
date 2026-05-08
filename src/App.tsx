@@ -53,9 +53,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
 };
 
 const AppContent = () => {
-  const { user } = useAppContext();
-  const verifiedMagicLink = sessionStorage.getItem('swiftdrop_magic_link_verified') === 'true';
-  const canAccessApp = Boolean(user || verifiedMagicLink);
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-200">
       {/* Mobile Device Frame */}
@@ -104,7 +101,7 @@ const AppContent = () => {
         </div>
 
         {/* Bottom Navigation */}
-        {canAccessApp ? <BottomNav /> : null}
+        <BottomNav />
       </div>
     </div>);
 
