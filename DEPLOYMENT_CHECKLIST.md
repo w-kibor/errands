@@ -225,6 +225,7 @@ Complete this checklist to successfully deploy SwiftDrop to production.
 - [ ] Redirect URLs configured
   - [ ] Add: `http://localhost:3000/auth/callback` (local dev)
   - [ ] Add: `https://[project-name].vercel.app/auth/callback` (production)
+  - [ ] Set `VITE_APP_URL` in Vercel to the production frontend URL
 
 - [ ] Test email sending
   - [ ] Go to Supabase: Auth → Users

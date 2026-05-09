@@ -18,7 +18,8 @@ const port = Number(process.env.PORT || 4000);
 const allowedOrigins = [
   'http://localhost:3000',    // Local dev (if using port 3000)
   'http://localhost:5173',    // Vite dev server
-  'https://errand-shop.vercel.app', // Production frontend
+  'https://errand-shop.vercel.app', // Previous production frontend
+  'https://errands-opal.vercel.app', // Current production frontend
   'https://errands-agb5.onrender.com' // Allow same-origin requests during testing
 ];
 

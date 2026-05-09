@@ -184,6 +184,7 @@ You should see SwiftDrop login page! ✅
 Already mentioned above, but ensure:
 - Email/OTP auth is enabled
 - Redirect URLs include your Vercel frontend URL:
+- In Vercel, set `VITE_APP_URL` to your live frontend URL so the app generates production callback links
 
 ```
 Settings → Auth → Providers → Email
