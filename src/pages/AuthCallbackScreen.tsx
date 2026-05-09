@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { apiRequest } from '../lib/api';
 
 /**
  * Handles the Supabase magic link callback
@@ -31,6 +32,23 @@ export const AuthCallbackScreen = () => {
 
         // User email is guaranteed from Supabase auth
         const userMetadata = user.user_metadata || {};
+
+        // Sync user to backend database
+        try {
+          await apiRequest('/api/auth/register', {
+            method: 'POST',
+            body: JSON.stringify({
+              email: user.email,
+              name: userMetadata.name || 'New User',
+              phone: userMetadata.phone,
+              avatar: userMetadata.avatar || null
+            })
+          });
+        } catch (error) {
+          // User might already exist from a previous signup attempt
+          // This is okay - they can still proceed with verified flag
+          console.warn('Could not create user in database:', error);
+        }
 
         sessionStorage.setItem('swiftdrop_magic_link_verified', 'true');
 
