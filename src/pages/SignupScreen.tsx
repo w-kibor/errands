@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
-import { apiRequest } from '../lib/api';
 import { getAuthCallbackUrl, isSupabaseConfigured, supabase } from '../lib/supabase';
 
 export const SignupScreen = () => {
@@ -27,14 +26,6 @@ export const SignupScreen = () => {
 
       setIsSending(true);
       try {
-        await apiRequest('/api/auth/check-signup', {
-          method: 'POST',
-          body: JSON.stringify({
-            email,
-            phone: `+254 ${phone}`
-          })
-        });
-
         const { error } = await supabase.auth.signInWithOtp({
           email,
           options: {
