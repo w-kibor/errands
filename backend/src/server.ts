@@ -15,7 +15,7 @@ const app = express();
 const port = Number(process.env.PORT || 4000);
 
 // Configure CORS to allow development and production origins
-const allowedOrigins = [
+const defaultAllowedOrigins = [
   'http://localhost:3000',    // Local dev (if using port 3000)
   'http://localhost:5173',    // Vite dev server
   'https://errand-shop.vercel.app', // Previous production frontend
@@ -23,12 +23,23 @@ const allowedOrigins = [
   'https://errands-agb5.onrender.com' // Allow same-origin requests during testing
 ];
 
+const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = new Set([...defaultAllowedOrigins, ...envAllowedOrigins]);
+
+function isLocalDevOrigin(origin: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or Postman)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
+
+    if (allowedOrigins.has(origin) || isLocalDevOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error('CORS not allowed'));
