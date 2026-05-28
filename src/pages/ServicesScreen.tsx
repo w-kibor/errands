@@ -8,6 +8,17 @@ export const ServicesScreen = () => {
   const navigate = useNavigate();
   const { services } = useAppContext();
 
+  // Ensure "Custom Task Requests" appears first in the list
+  const orderedServices = React.useMemo(() => {
+    if (!services) return [];
+    const customIndex = services.findIndex(
+      (s) => s.id === 'custom-task-requests' || s.name === 'Custom Task Requests'
+    );
+    if (customIndex === -1) return services;
+    const custom = services[customIndex];
+    return [custom, ...services.slice(0, customIndex), ...services.slice(customIndex + 1)];
+  }, [services]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -33,7 +44,7 @@ export const ServicesScreen = () => {
           </div>
         </div>
 
-        {services.map((service) => (
+        {orderedServices.map((service) => (
           <button
             key={service.id}
             onClick={() =>
