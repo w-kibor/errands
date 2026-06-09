@@ -35,12 +35,16 @@ function isLocalDevOrigin(origin: string) {
   return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 }
 
+function isVercelOrigin(origin: string) {
+  return /^https:\/\/.*\.vercel\.app$/.test(origin);
+}
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or Postman)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.has(origin) || isLocalDevOrigin(origin)) {
+    if (allowedOrigins.has(origin) || isLocalDevOrigin(origin) || isVercelOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error('CORS not allowed'));
