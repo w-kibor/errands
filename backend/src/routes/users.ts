@@ -8,7 +8,7 @@ const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().min(7).optional(),
-  avatar: z.string().url().optional().or(z.literal('')),
+  avatar: z.string().optional().or(z.literal('')),
   isRunner: z.boolean().optional(),
   runnerVehicleType: z.string().optional(),
   runnerCoverageArea: z.string().optional(),
