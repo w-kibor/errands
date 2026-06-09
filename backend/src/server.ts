@@ -9,6 +9,7 @@ import { serviceRequestsRouter } from './routes/service-requests.js';
 import { messagesRouter } from './routes/messages.js';
 import { notificationPreferencesRouter } from './routes/notification-preferences.js';
 import { servicesRouter } from './routes/services.js';
+import { jobsRouter } from './routes/jobs.js';
 import { adminBypass } from './middleware/adminBypass.js';
 
 const app = express();
@@ -67,6 +68,7 @@ app.use('/api/users/:userId/service-requests', serviceRequestsRouter);
 app.use('/api/users/:userId/messages', messagesRouter);
 app.use('/api/users/:userId/notifications', notificationPreferencesRouter);
 app.use('/api/services', servicesRouter);
+app.use('/api/jobs', jobsRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });
