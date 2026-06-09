@@ -10,7 +10,7 @@ const authSchema = z.object({
 	name: z.string().min(2).optional(),
 	email: z.string().email(),
 	phone: z.string().min(7).optional(),
-	avatar: z.string().url().optional().or(z.literal(''))
+	avatar: z.string().optional().or(z.literal(''))
 });
 
 const signupAvailabilitySchema = z.object({
