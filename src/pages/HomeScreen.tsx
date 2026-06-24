@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import {
   Bell,
   Search,
@@ -12,10 +14,61 @@ import {
 import { useAppContext } from '../contexts/AppContext';
 import { OrderCard } from '../components/OrderCard';
 import { ProfileAvatar } from '../components/ProfileAvatar';
+
+const runnerIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+});
+
 export const HomeScreen = () => {
   const navigate = useNavigate();
   const { user, orders } = useAppContext();
   const recentOrders = orders.slice(0, 2);
+  const [nearbyRunners, setNearbyRunners] = useState<any[]>([]);
+
+  useEffect(() => {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+    
+    // Fetch initial online runners
+    fetch(`${apiBase}/api/jobs/nearby-runners`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.runners) {
+          setNearbyRunners(data.runners);
+        }
+      })
+      .catch((err) => console.error('Error fetching nearby runners:', err));
+
+    // Connect to WebSocket
+    const wsUrl = apiBase.replace(/^http/, 'ws');
+    const socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      console.log('Customer HomeScreen WS connected');
+      socket.send(JSON.stringify({ type: 'subscribe_nearby' }));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        if (message.type === 'nearby_runners') {
+          setNearbyRunners(message.runners);
+        }
+      } catch (err) {
+        console.error('Error handling nearby WS message:', err);
+      }
+    };
+
+    socket.onerror = (err) => {
+      console.error('Customer HomeScreen WS error:', err);
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
   return (
     <motion.div
       initial={{
@@ -71,6 +124,38 @@ export const HomeScreen = () => {
             </span>
           </div>
           <ChevronRight size={18} className="text-brand-dark" />
+        </div>
+
+        {/* Nearby Runners Map Widget */}
+        <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 overflow-hidden relative">
+          <h3 className="font-bold text-dark text-sm mb-3">Nearby SwiftDrop Runners</h3>
+          <div className="h-44 rounded-2xl overflow-hidden relative border border-gray-150 z-0">
+            <MapContainer
+              center={[-1.286389, 36.817223]} // Center in Nairobi
+              zoom={13}
+              zoomControl={false}
+              className="w-full h-full">
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors'
+              />
+              {/* Nearby Runner Markers */}
+              {nearbyRunners.map((runner) => (
+                <Marker
+                  key={runner.runnerId}
+                  position={[runner.lat, runner.lng]}
+                  icon={runnerIcon}
+                >
+                  <Popup>
+                    <div className="text-xs font-semibold p-1">
+                      <p className="font-bold">{runner.name}</p>
+                      <p className="text-[10px] text-gray-500">{runner.vehicle}</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </div>
         </div>
 
         {/* Main Actions */}

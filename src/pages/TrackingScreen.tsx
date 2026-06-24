@@ -27,23 +27,85 @@ export const TrackingScreen = () => {
   const { orders, updateOrderStatus } = useAppContext();
   const orderId = location.state?.orderId;
   const order = orders.find((o) => o.id === orderId) || orders[0]; // Fallback to first order if none provided
-  // Simulate status updates
-  useEffect(() => {
-    if (!order || order.status === 'Delivered' || order.status === 'Cancelled')
-    return;
-    const statuses: any[] = [
-    'Rider Assigned',
-    'Picking Up',
-    'En Route',
-    'Delivered'];
+  const [trackedOrder, setTrackedOrder] = useState<Order | null>(null);
 
-    const currentIndex = statuses.indexOf(order.status);
-    if (currentIndex < statuses.length - 1) {
-      const timer = setTimeout(() => {
-        void (async () => {
-          await updateOrderStatus(order.id, statuses[currentIndex + 1]);
-          // If it just hit delivered, go to rating screen after a delay
-          if (statuses[currentIndex + 1] === 'Delivered') {
+  useEffect(() => {
+    if (order) {
+      setTrackedOrder(order);
+    }
+  }, [order]);
+
+  useEffect(() => {
+    if (!order) return;
+
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+    const wsUrl = apiBase.replace(/^http/, 'ws');
+    const socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+      console.log('Customer WS connected for tracking order:', order.id);
+      socket.send(JSON.stringify({
+        type: 'subscribe_order',
+        orderId: order.id,
+        riderId: order.rider?.id
+      }));
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log('Customer WS received tracking event:', message);
+
+        if (message.type === 'location_update') {
+          setTrackedOrder((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              rider: prev.rider ? {
+                ...prev.rider,
+                lat: message.lat,
+                lng: message.lng
+              } : {
+                id: message.riderId || 'demo-rider',
+                name: 'Rider',
+                phone: '',
+                rating: 5.0,
+                vehicle: 'Vehicle',
+                avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d',
+                lat: message.lat,
+                lng: message.lng
+              }
+            };
+          });
+        } else if (message.type === 'status_update') {
+          let displayStatus: Order['status'] = 'Pending';
+          switch (message.status) {
+            case 'PENDING':
+              displayStatus = 'Pending';
+              break;
+            case 'RIDER_ASSIGNED':
+              displayStatus = 'Rider Assigned';
+              break;
+            case 'PICKING_UP':
+              displayStatus = 'Picking Up';
+              break;
+            case 'EN_ROUTE':
+              displayStatus = 'En Route';
+              break;
+            case 'DELIVERED':
+              displayStatus = 'Delivered';
+              break;
+            case 'CANCELLED':
+              displayStatus = 'Cancelled';
+              break;
+          }
+
+          setTrackedOrder((prev) => {
+            if (!prev) return null;
+            return { ...prev, status: displayStatus };
+          });
+
+          if (displayStatus === 'Delivered') {
             setTimeout(() => {
               navigate('/rating', {
                 state: {
@@ -52,18 +114,29 @@ export const TrackingScreen = () => {
               });
             }, 2000);
           }
-        })();
-      }, 5000); // Change status every 5 seconds for demo
-      return () => clearTimeout(timer);
-    }
-  }, [order, updateOrderStatus, navigate]);
-  if (!order || !order.rider) return null;
+        }
+      } catch (err) {
+        console.error('Error handling customer WS message', err);
+      }
+    };
+
+    socket.onerror = (err) => {
+      console.error('Customer WS tracking error', err);
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, [order?.id, navigate]);
+
+  if (!trackedOrder || !trackedOrder.rider) return null;
+
   return (
     <div className="flex flex-col h-full bg-gray-50 relative">
       {/* Map Area */}
       <div className="flex-1 relative z-0">
         <MapContainer
-          center={[order.rider.lat, order.rider.lng]}
+          center={[trackedOrder.rider.lat, trackedOrder.rider.lng]}
           zoom={14}
           zoomControl={false}
           className="w-full h-full">
@@ -73,7 +146,7 @@ export const TrackingScreen = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors' />
           
           <Marker
-            position={[order.rider.lat, order.rider.lng]}
+            position={[trackedOrder.rider.lat, trackedOrder.rider.lng]}
             icon={customIcon} />
           
         </MapContainer>
@@ -87,7 +160,7 @@ export const TrackingScreen = () => {
             <ArrowLeft size={20} className="text-dark" />
           </button>
           <div className="bg-white px-4 py-2 rounded-full shadow-md font-bold text-sm text-dark">
-            {order.id}
+            {trackedOrder.id}
           </div>
         </div>
       </div>
@@ -109,7 +182,7 @@ export const TrackingScreen = () => {
         <div className="flex justify-between items-end mb-6">
           <div>
             <h2 className="text-2xl font-bold text-dark">
-              {order.status === 'Delivered' ? 'Arrived' : '15 min'}
+              {trackedOrder.status === 'Delivered' ? 'Arrived' : '15 min'}
             </h2>
             <p className="text-gray-500 text-sm font-medium">
               Estimated arrival
@@ -120,29 +193,29 @@ export const TrackingScreen = () => {
           </div>
         </div>
 
-        <StatusStepper status={order.status} />
+        <StatusStepper status={trackedOrder.status} />
 
         <div className="mt-6 pt-6 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <div className="relative">
                 <img
-                  src={order.rider.avatar}
-                  alt={order.rider.name}
+                  src={trackedOrder.rider.avatar}
+                  alt={trackedOrder.rider.name}
                   className="w-14 h-14 rounded-full object-cover border-2 border-brand" />
                 
                 <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
                   <div className="bg-brand text-dark text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center">
                     <Star size={10} className="mr-0.5 fill-dark" />{' '}
-                    {order.rider.rating}
+                    {trackedOrder.rider.rating}
                   </div>
                 </div>
               </div>
               <div className="ml-4">
                 <h3 className="font-bold text-dark text-lg">
-                  {order.rider.name}
+                  {trackedOrder.rider.name}
                 </h3>
-                <p className="text-sm text-gray-500">{order.rider.vehicle}</p>
+                <p className="text-sm text-gray-500">{trackedOrder.rider.vehicle}</p>
               </div>
             </div>
 
@@ -160,6 +233,7 @@ export const TrackingScreen = () => {
           </div>
         </div>
       </motion.div>
-    </div>);
+    </div>
+  );
 
 };

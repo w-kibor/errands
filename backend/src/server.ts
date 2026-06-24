@@ -78,6 +78,14 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(port, () => {
+import { createServer } from 'http';
+import { initWebSocketServer } from './lib/websocket.js';
+
+const server = createServer(app);
+
+initWebSocketServer(server);
+
+server.listen(port, () => {
   console.log(`SwiftDrop API running on http://localhost:${port}`);
 });
+
