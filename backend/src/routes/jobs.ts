@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
+import { broadcastOrderStatusChange, onlineRunners } from '../lib/websocket.js';
 
 export const jobsRouter = Router();
 
@@ -66,6 +67,7 @@ jobsRouter.post('/:jobId/accept', async (req, res) => {
           status: 'RIDER_ASSIGNED'
         }
       });
+      broadcastOrderStatusChange(order.orderNumber, order.status);
       return res.json({ job: order });
     } else if (agentType === 'runner') {
       // Accept service request
@@ -76,6 +78,7 @@ jobsRouter.post('/:jobId/accept', async (req, res) => {
           status: 'ASSIGNED'
         }
       });
+      broadcastOrderStatusChange(serviceRequest.id, serviceRequest.status);
       return res.json({ job: serviceRequest });
     } else {
       return res.status(400).json({ error: 'Invalid agentType' });
@@ -101,12 +104,14 @@ jobsRouter.post('/:jobId/status', async (req, res) => {
         where: { orderNumber: jobId },
         data: { status }
       });
+      broadcastOrderStatusChange(order.orderNumber, order.status);
       return res.json({ job: order });
     } else if (agentType === 'runner') {
       const serviceRequest = await prisma.serviceRequest.update({
         where: { id: jobId },
         data: { status }
       });
+      broadcastOrderStatusChange(serviceRequest.id, serviceRequest.status);
       return res.json({ job: serviceRequest });
     } else {
       return res.status(400).json({ error: 'Invalid agentType' });
@@ -265,3 +270,14 @@ jobsRouter.get('/stats/:runnerId', async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+// GET /api/jobs/nearby-runners
+jobsRouter.get('/nearby-runners', async (req, res) => {
+  try {
+    return res.json({ runners: Array.from(onlineRunners.values()) });
+  } catch (error) {
+    console.error('Error fetching nearby runners:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
