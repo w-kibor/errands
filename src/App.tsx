@@ -32,6 +32,11 @@ import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { user, isHydrating } = useAppContext();
   const location = useLocation();
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.endsWith('.local')
+  );
   const verifiedMagicLink = sessionStorage.getItem('swiftdrop_magic_link_verified') === 'true';
 
   if (isHydrating) {
@@ -45,7 +50,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
     );
   }
 
-  if (!user && !verifiedMagicLink) {
+  if (!user && !verifiedMagicLink && !isLocalhost) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

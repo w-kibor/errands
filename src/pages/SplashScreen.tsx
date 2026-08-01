@@ -10,7 +10,7 @@ export const SplashScreen = () => {
     if (isHydrating) return;
 
     const timer = setTimeout(() => {
-      navigate(user ? '/home' : '/login');
+      navigate(user ? '/home' : '/signup');
     }, 2500);
     return () => clearTimeout(timer);
   }, [navigate, user, isHydrating]);

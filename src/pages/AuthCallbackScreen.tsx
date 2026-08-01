@@ -55,7 +55,7 @@ export const AuthCallbackScreen = () => {
         // Clear any pending auth from sessionStorage
         sessionStorage.removeItem('swiftdrop_pending_auth');
 
-        const isRunnerSignup = Boolean(userMetadata.isRunner);
+        const isRunnerSignup = Boolean(userMetadata.isRunner || userMetadata.accountType === 'runner');
 
         // Wait for React to process the state update before navigating
         // This ensures the ProtectedRoute sees the updated user context

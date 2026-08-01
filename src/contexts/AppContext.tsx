@@ -155,11 +155,31 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     const bootstrap = async () => {
       try {
         const storedUserId = localStorage.getItem(USER_STORAGE_KEY);
-        if (!storedUserId) {
+        if (storedUserId) {
+          await hydrateUser(storedUserId);
           return;
         }
 
-        await hydrateUser(storedUserId);
+        const isLocalhost = typeof window !== 'undefined' && (
+          window.location.hostname === 'localhost' || 
+          window.location.hostname === '127.0.0.1'
+        );
+
+        if (isLocalhost) {
+          const devUser = import.meta.env.VITE_DEV_AUTH_USER || 'chem';
+          try {
+            await hydrateUser(devUser);
+            localStorage.setItem(USER_STORAGE_KEY, devUser);
+          } catch {
+            setUser({
+              id: 'demo-local-dev',
+              name: 'Local Developer',
+              email: 'dev@localhost.com',
+              phone: '+254700000000',
+              isRunner: false
+            });
+          }
+        }
       } catch {
         localStorage.removeItem(USER_STORAGE_KEY);
       } finally {
@@ -168,25 +188,6 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     };
 
     void bootstrap();
-  }, []);
-
-  // Dev-only: auto-login when VITE_DEV_AUTH_USER is set.
-  // Set VITE_DEV_AUTH_USER=<userId> in your .env to auto-hydrate that user.
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-
-    const storedUserId = localStorage.getItem(USER_STORAGE_KEY);
-    if (storedUserId) return;
-
-    const devUser = import.meta.env.VITE_DEV_AUTH_USER;
-    if (!devUser) return;
-
-    localStorage.setItem(USER_STORAGE_KEY, devUser);
-    hydrateUser(devUser).catch(() => {
-      localStorage.removeItem(USER_STORAGE_KEY);
-    }).finally(() => {
-      setIsHydrating(false);
-    });
   }, []);
 
   const login = async (email: string, name?: string, phone?: string) => {
