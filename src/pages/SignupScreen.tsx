@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, User, Building2, Bike, Check, Sparkles, ExternalLink, ShieldCheck, Briefcase } from 'lucide-react';
 import { getAuthCallbackUrl, isSupabaseConfigured, supabase } from '../lib/supabase';
+import { useAppContext } from '../contexts/AppContext';
 
 type AccountType = 'individual' | 'business' | 'runner';
 
@@ -48,6 +49,7 @@ const businessCategories = [
 
 export const SignupScreen = () => {
   const navigate = useNavigate();
+  const { login, createBusinessProfile } = useAppContext();
   const [accountType, setAccountType] = useState<AccountType>('individual');
   
   // Input states
@@ -93,23 +95,31 @@ export const SignupScreen = () => {
       return;
     }
 
-    // 2. If Business account is selected -> redirect to Business / B2B Portal (Port 5174)
+    // 2. If Business account is selected -> Create Corporate Business Profile and go to Business Profile
     if (accountType === 'business') {
-      const businessAppBaseUrl = import.meta.env.VITE_BUSINESS_APP_URL || 
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'http://localhost:5174'
-          : 'https://business.swiftdrop.co.ke');
+      if (!isBusinessNameValid || !isEmailValid || !isPhoneValid) return;
+      setIsSending(true);
 
-      const params = new URLSearchParams();
-      if (businessName.trim()) params.append('businessName', businessName.trim());
-      if (name.trim()) params.append('name', name.trim());
-      if (email.trim()) params.append('email', email.trim());
-      if (phone.trim()) params.append('phone', phone.trim());
-      if (businessCategory) params.append('category', businessCategory);
+      try {
+        // Register or login corporate user
+        await login(email, name || businessName, phone);
+        
+        // Create corporate business profile
+        await createBusinessProfile({
+          name: businessName.trim(),
+          email: email.trim(),
+          phone: `+254${phone.replace(/\D/g, '')}`
+        });
 
-      const queryString = params.toString();
-      const targetUrl = queryString ? `${businessAppBaseUrl}?${queryString}` : businessAppBaseUrl;
-      window.location.href = targetUrl;
+        navigate('/business-profile');
+      } catch (err) {
+        console.error('Failed to create corporate business account:', err);
+        const msg = err instanceof Error ? err.message : 'Could not create business profile right now.';
+        window.alert(msg);
+        navigate('/business-profile');
+      } finally {
+        setIsSending(false);
+      }
       return;
     }
 

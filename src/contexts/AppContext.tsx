@@ -9,7 +9,13 @@ import {
   RunnerProfile,
   SavedAddress,
   SavedPaymentMethod,
-  PaymentMethodType
+  PaymentMethodType,
+  BusinessProfile,
+  BusinessRole,
+  TeamMember,
+  Branch,
+  CorporateWallet,
+  CostCenter
 } from '../types';
 import { mockRider } from '../data/mockData';
 import { serviceDefinitions } from '../data/services';
@@ -24,13 +30,13 @@ import {
   mapBackendServiceName,
   mapBackendServiceRequestStatus,
   mapBackendUrgency,
-  toBackendPaymentMethodType
-  ,
+  toBackendPaymentMethodType,
   toBackendOrderStatus,
   toBackendPackageType,
   toBackendServiceName,
   toBackendUrgency
 } from '../lib/api';
+
 interface AppContextType {
   user: User | null;
   isHydrating: boolean;
@@ -48,6 +54,19 @@ interface AppContextType {
   serviceRequests: ServiceRequest[];
   addresses: SavedAddress[];
   paymentMethods: SavedPaymentMethod[];
+  
+  // Corporate Business B2B State & Actions
+  userBusinesses: BusinessProfile[];
+  currentBusiness: BusinessProfile | null;
+  currentMemberRole: BusinessRole | null;
+  createBusinessProfile: (data: { name: string; email: string; phone: string; taxId?: string; website?: string; }) => Promise<BusinessProfile>;
+  selectBusiness: (businessId: string) => void;
+  refreshBusiness: (businessId?: string) => Promise<void>;
+  topupCorporateWallet: (amount: number, paymentMethod?: string) => Promise<void>;
+  inviteTeamMember: (data: { email: string; phone: string; name: string; role?: BusinessRole; branchId?: string; title?: string; }) => Promise<void>;
+  createCostCenter: (code: string, name: string, description?: string) => Promise<void>;
+  createBranch: (data: { name: string; address: string; city?: string; phone?: string; }) => Promise<void>;
+
   addServiceRequest: (request: ServiceRequest) => Promise<void>;
   becomeRunner: (profile: RunnerProfile) => Promise<void>;
   addAddress: (data: { label: string; address: string; isPrimary?: boolean; }) => void;
@@ -58,8 +77,10 @@ interface AppContextType {
   setDefaultPaymentMethod: (methodId: string) => void;
   deletePaymentMethod: (methodId: string) => void;
 }
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 const USER_STORAGE_KEY = 'swiftdrop_user_id';
+const ACTIVE_BUSINESS_STORAGE_KEY = 'swiftdrop_active_business_id';
 
 const mapBackendUser = (backendUser: BackendUser): User => ({
   id: backendUser.id,
@@ -127,7 +148,7 @@ const mapBackendServiceRequest = (request: BackendServiceRequest): ServiceReques
   status: mapBackendServiceRequestStatus(request.status)
 });
 
-export const AppProvider = ({ children }: {children: ReactNode;}) => {
+export const AppProvider = ({ children }: { children: ReactNode; }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isHydrating, setIsHydrating] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -136,6 +157,11 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<SavedPaymentMethod[]>([]);
+
+  // Corporate B2B State
+  const [userBusinesses, setUserBusinesses] = useState<BusinessProfile[]>([]);
+  const [currentBusiness, setCurrentBusiness] = useState<BusinessProfile | null>(null);
+  const [currentMemberRole, setCurrentMemberRole] = useState<BusinessRole | null>(null);
 
   const hydrateUser = async (userId: string) => {
     const [userResponse, ordersResponse, serviceRequestsResponse] = await Promise.all([
@@ -149,6 +175,29 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     setPaymentMethods((userResponse.user.paymentMethods || []).map(mapBackendPaymentMethod));
     setOrders(ordersResponse.orders.map(mapBackendOrder));
     setServiceRequests(serviceRequestsResponse.serviceRequests.map(mapBackendServiceRequest));
+
+    // Hydrate User Corporate Businesses
+    try {
+      const bizRes = await apiRequest<{ memberships: any[] }>(`/api/business/user-businesses/${userId}`);
+      if (bizRes.memberships && bizRes.memberships.length > 0) {
+        const mappedList: BusinessProfile[] = bizRes.memberships.map((m) => ({
+          ...m.business,
+          createdAt: m.business.createdAt
+        }));
+        setUserBusinesses(mappedList);
+
+        const storedBizId = localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY);
+        const match = mappedList.find((b) => b.id === storedBizId) || mappedList[0];
+        setCurrentBusiness(match);
+
+        const activeMembership = bizRes.memberships.find((m) => m.business.id === match.id);
+        if (activeMembership) {
+          setCurrentMemberRole(activeMembership.role);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to hydrate corporate business profiles:', err);
+    }
   };
 
   useEffect(() => {
@@ -195,14 +244,8 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
 
     const endpoint = name ? '/api/auth/register' : '/api/auth/login';
     const payload = name
-      ? {
-          email,
-          name,
-          phone
-        }
-      : {
-          email
-        };
+      ? { email, name, phone }
+      : { email };
 
     const response = await apiRequest<{ user: BackendUser }>(endpoint, {
       method: 'POST',
@@ -216,11 +259,106 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
       setIsHydrating(false);
     }
   };
-  const updateUserProfile = async (data: {
-    name: string;
-    phone: string;
-    avatar?: string;
-  }) => {
+
+  const createBusinessProfile = async (data: { name: string; email: string; phone: string; taxId?: string; website?: string; }) => {
+    if (!user) throw new Error('Must be logged in to create a business profile');
+
+    const res = await apiRequest<{ business: BusinessProfile }>(`/api/business`, {
+      method: 'POST',
+      body: JSON.stringify({ ...data, userId: user.id })
+    });
+
+    await refreshBusiness(res.business.id);
+    return res.business;
+  };
+
+  const selectBusiness = (businessId: string) => {
+    const match = userBusinesses.find((b) => b.id === businessId);
+    if (match) {
+      setCurrentBusiness(match);
+      localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, businessId);
+    }
+  };
+
+  const refreshBusiness = async (businessId?: string) => {
+    if (!user) return;
+    const targetId = businessId || currentBusiness?.id;
+    if (!targetId) return;
+
+    try {
+      const res = await apiRequest<{ business: BusinessProfile; currentMember: TeamMember }>(
+        `/api/business/${targetId}`,
+        {
+          headers: {
+            'x-user-id': user.id
+          }
+        }
+      );
+
+      setCurrentBusiness(res.business);
+      setCurrentMemberRole(res.currentMember.role);
+    } catch (err) {
+      console.warn('Failed to refresh business profile:', err);
+    }
+  };
+
+  const topupCorporateWallet = async (amount: number, paymentMethod: string = 'MPESA') => {
+    if (!user || !currentBusiness) return;
+
+    await apiRequest(`/api/business/${currentBusiness.id}/wallet/topup`, {
+      method: 'POST',
+      headers: {
+        'x-user-id': user.id
+      },
+      body: JSON.stringify({ amount, paymentMethod })
+    });
+
+    await refreshBusiness(currentBusiness.id);
+  };
+
+  const inviteTeamMember = async (data: { email: string; phone: string; name: string; role?: BusinessRole; branchId?: string; title?: string; }) => {
+    if (!user || !currentBusiness) return;
+
+    await apiRequest(`/api/business/${currentBusiness.id}/members/invite`, {
+      method: 'POST',
+      headers: {
+        'x-user-id': user.id
+      },
+      body: JSON.stringify(data)
+    });
+
+    await refreshBusiness(currentBusiness.id);
+  };
+
+  const createCostCenter = async (code: string, name: string, description?: string) => {
+    if (!user || !currentBusiness) return;
+
+    await apiRequest(`/api/business/${currentBusiness.id}/cost-centers`, {
+      method: 'POST',
+      headers: {
+        'x-user-id': user.id
+      },
+      body: JSON.stringify({ code, name, description })
+    });
+
+    await refreshBusiness(currentBusiness.id);
+  };
+
+  const createBranch = async (data: { name: string; address: string; city?: string; phone?: string; }) => {
+    if (!user || !currentBusiness) return;
+
+    await apiRequest(`/api/business/${currentBusiness.id}/branches`, {
+      method: 'POST',
+      headers: {
+        'x-user-id': user.id
+      },
+      body: JSON.stringify(data)
+    });
+
+    await refreshBusiness(currentBusiness.id);
+  };
+
+  const updateUserProfile = async (data: { name: string; phone: string; avatar?: string; }) => {
     if (!user) return;
 
     const response = await apiRequest<{ user: BackendUser }>(`/api/users/${user.id}`, {
@@ -230,16 +368,22 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
 
     setUser(mapBackendUser(response.user));
   };
+
   const logout = async () => {
     setUser(null);
     setDraftOrder(null);
     setActiveTab('home');
     setAddresses([]);
     setPaymentMethods([]);
+    setUserBusinesses([]);
+    setCurrentBusiness(null);
+    setCurrentMemberRole(null);
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
     sessionStorage.removeItem('swiftdrop_magic_link_verified');
     setIsHydrating(false);
   };
+
   const addOrder = async (order: Order) => {
     if (!user) {
       setOrders((prev) => [order, ...prev]);
@@ -255,12 +399,14 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
         urgency: toBackendUrgency(order.urgency),
         price: order.price,
         note: order.note,
-        riderId: order.rider?.id && order.rider.id !== 'demo-rider' ? order.rider.id : undefined
+        riderId: order.rider?.id && order.rider.id !== 'demo-rider' ? order.rider.id : undefined,
+        businessId: currentBusiness?.id
       })
     });
 
     setOrders((prev) => [mapBackendOrder(response.order), ...prev.filter((item) => item.id !== response.order.orderNumber)]);
   };
+
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     if (!user) {
       setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status } : o));
@@ -274,6 +420,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     const mappedOrder = mapBackendOrder(response.order);
     setOrders((prev) => prev.map((item) => item.id === mappedOrder.id ? mappedOrder : item));
   };
+
   const addServiceRequest = async (request: ServiceRequest) => {
     if (!user) {
       setServiceRequests((prev) => [request, ...prev]);
@@ -295,6 +442,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
 
     setServiceRequests((prev) => [mapBackendServiceRequest(response.serviceRequest), ...prev.filter((item) => item.id !== response.serviceRequest.id)]);
   };
+
   const addAddress = async (data: { label: string; address: string; isPrimary?: boolean; }) => {
     if (!user) return;
 
@@ -314,12 +462,8 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
-  const updateAddress = async (data: {
-    id: string;
-    label: string;
-    address: string;
-    isPrimary?: boolean;
-  }) => {
+
+  const updateAddress = async (data: { id: string; label: string; address: string; isPrimary?: boolean; }) => {
     if (!user) return;
 
     await apiRequest(`/api/users/${user.id}/addresses/${data.id}`, {
@@ -328,6 +472,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
+
   const deleteAddress = async (addressId: string) => {
     if (!user) return;
 
@@ -336,6 +481,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
+
   const setPrimaryAddress = async (addressId: string) => {
     if (!user) return;
 
@@ -344,12 +490,8 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
-  const addPaymentMethod = async (data: {
-    type: PaymentMethodType;
-    label: string;
-    details: string;
-    isDefault?: boolean;
-  }) => {
+
+  const addPaymentMethod = async (data: { type: PaymentMethodType; label: string; details: string; isDefault?: boolean; }) => {
     if (!user) return;
 
     const response = await apiRequest<{ paymentMethod: { id: string; type: 'MPESA' | 'CARD' | 'CASH_ON_DELIVERY'; label: string; details: string; isDefault: boolean; } }>(
@@ -374,6 +516,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
+
   const setDefaultPaymentMethod = async (methodId: string) => {
     if (!user) return;
 
@@ -382,6 +525,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
+
   const deletePaymentMethod = async (methodId: string) => {
     if (!user) return;
 
@@ -390,6 +534,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
     });
     await hydrateUser(user.id);
   };
+
   const becomeRunner = async (profile: RunnerProfile) => {
     if (!user) return;
 
@@ -406,6 +551,7 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
 
     setUser(mapBackendUser(response.user));
   };
+
   return (
     <AppContext.Provider
       value={{
@@ -425,6 +571,16 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
         serviceRequests,
         addresses,
         paymentMethods,
+        userBusinesses,
+        currentBusiness,
+        currentMemberRole,
+        createBusinessProfile,
+        selectBusiness,
+        refreshBusiness,
+        topupCorporateWallet,
+        inviteTeamMember,
+        createCostCenter,
+        createBranch,
         addServiceRequest,
         becomeRunner,
         addAddress,
@@ -435,11 +591,11 @@ export const AppProvider = ({ children }: {children: ReactNode;}) => {
         setDefaultPaymentMethod,
         deletePaymentMethod
       }}>
-      
       {children}
-    </AppContext.Provider>);
-
+    </AppContext.Provider>
+  );
 };
+
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {

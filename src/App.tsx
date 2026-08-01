@@ -28,6 +28,7 @@ import { ShopErrandsScreen } from './pages/ShopErrandsScreen';
 import { ServicesScreen } from './pages/ServicesScreen';
 import { CreateServiceRequestScreen } from './pages/CreateServiceRequestScreen';
 import { RunnerSignupScreen } from './pages/RunnerSignupScreen';
+import { BusinessProfileScreen } from './pages/BusinessProfileScreen';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
   const { user, isHydrating } = useAppContext();
@@ -100,6 +101,8 @@ const AppContent = () => {
               <Route path="/services" element={<ProtectedRoute><ServicesScreen /></ProtectedRoute>} />
               <Route path="/create-request" element={<ProtectedRoute><CreateServiceRequestScreen /></ProtectedRoute>} />
               <Route path="/runner-signup" element={<ProtectedRoute><RunnerSignupScreen /></ProtectedRoute>} />
+              <Route path="/business-profile" element={<ProtectedRoute><BusinessProfileScreen /></ProtectedRoute>} />
+              <Route path="/business" element={<ProtectedRoute><BusinessProfileScreen /></ProtectedRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>

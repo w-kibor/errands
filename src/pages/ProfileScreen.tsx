@@ -9,18 +9,26 @@ import {
   Info,
   LogOut,
   ChevronRight,
-  Edit2 } from
-'lucide-react';
+  Edit2,
+  Building2
+} from 'lucide-react';
 import { useAppContext } from '../contexts/AppContext';
 import { ProfileAvatar } from '../components/ProfileAvatar';
 export const ProfileScreen = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAppContext();
+  const { user, logout, currentBusiness } = useAppContext();
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
   const menuItems = [
+  {
+    icon: Building2,
+    label: currentBusiness ? `Corporate Profile (${currentBusiness.name})` : 'Corporate Business Profile',
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+    path: '/business-profile'
+  },
   {
     icon: MapPin,
     label: 'My Addresses',

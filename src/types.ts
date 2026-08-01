@@ -123,3 +123,93 @@ export interface RunnerProfile {
   capabilities: ServiceType[];
   verified: boolean;
 }
+
+export type BusinessRole = 'OWNER_ADMIN' | 'MANAGER_DISPATCHER' | 'STAFF_REQUESTER';
+
+export interface BusinessProfile {
+  id: string;
+  name: string;
+  taxId?: string;
+  email: string;
+  phone: string;
+  website?: string;
+  logoUrl?: string;
+  createdAt: string;
+  wallet?: CorporateWallet;
+  branches?: Branch[];
+  costCenters?: CostCenter[];
+  _count?: {
+    members: number;
+    orders: number;
+    bulkBatches: number;
+  };
+}
+
+export interface TeamMember {
+  id: string;
+  businessId: string;
+  userId: string;
+  role: BusinessRole;
+  branchId?: string;
+  title?: string;
+  isActive: boolean;
+  user?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone: string;
+    avatar?: string;
+  };
+  branch?: Branch;
+}
+
+export interface Branch {
+  id: string;
+  businessId: string;
+  name: string;
+  address: string;
+  city: string;
+  phone?: string;
+  isPrimary: boolean;
+}
+
+export interface CorporateWallet {
+  id: string;
+  businessId: string;
+  balance: number;
+  currency: string;
+  transactions?: WalletTransaction[];
+}
+
+export interface WalletTransaction {
+  id: string;
+  walletId: string;
+  amount: number;
+  type: 'TOPUP' | 'ERRAND_DEPOSIT' | 'ERRAND_DEDUCTION' | 'REFUND' | 'ADJUSTMENT';
+  description: string;
+  referenceId?: string;
+  costCenterId?: string;
+  costCenter?: CostCenter;
+  createdAt: string;
+}
+
+export interface CostCenter {
+  id: string;
+  businessId: string;
+  code: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface BulkErrandBatch {
+  id: string;
+  businessId: string;
+  filename: string;
+  totalItems: number;
+  processedItems: number;
+  successItems: number;
+  failedItems: number;
+  status: 'PENDING' | 'VALIDATING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  createdAt: string;
+}
